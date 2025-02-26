@@ -1,4 +1,4 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+import { NextRequest, NextResponse } from "next/server";
 
 type ProductData = {
   price: number;
@@ -7,11 +7,11 @@ type ProductData = {
   image: string;
 };
 
-export default function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<ProductData>
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { productId: string } }
 ) {
-  const { productId } = req.query;
+  const productId = params.productId;
 
   // 生成1-100之间的随机数，并保留两位小数
   const randomPrice = parseFloat((Math.random() * 99 + 1).toFixed(2));
@@ -24,5 +24,5 @@ export default function handler(
     image: `https://picsum.photos/seed/${productId}/400/400`,
   };
 
-  res.status(200).json(productData);
+  return NextResponse.json(productData);
 }
