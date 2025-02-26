@@ -15,6 +15,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: "Contents", path: "/contents" },
     { name: "Orders", path: "/orders" },
     { name: "Fans", path: "/fans" },
+    { name: "Test", path: "/test" },
   ];
 
   return (
@@ -30,11 +31,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <li key={item.path}>
                 <Link
                   href={item.path}
-                  className={`flex items-center px-6 py-3 text-gray-600 hover:bg-gray-100 hover:text-gray-800 ${
-                    pathname === item.path
+                  className={`flex items-center px-6 py-3 text-gray-600 hover:bg-gray-100 hover:text-gray-800 ${pathname === item.path
                       ? "bg-gray-100 text-gray-800 border-l-4 border-blue-500"
                       : ""
-                  }`}
+                    }`}
                 >
                   {item.name}
                 </Link>
