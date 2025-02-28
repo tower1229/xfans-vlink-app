@@ -1,0 +1,179 @@
+import { NextResponse } from "next/server";
+import {
+  getOrderById,
+  createNewOrder,
+  updateOrderStatus,
+  getOrdersByUser,
+  updateExpiredOrders,
+  getProductById,
+} from "@/utils";
+import { NotFoundError, ValidationError } from "../middleware/errorHandler";
+import { isAddress } from "viem";
+
+/**
+ * 创建订单
+ * @param {Request} request 请求对象
+ * @param {Object} data 订单数据
+ * @returns {Promise<Response>} 响应对象
+ */
+export async function createOrderController(request, data) {
+  const { productId, userAddress } = data;
+
+  // 验证用户地址
+  if (!isAddress(userAddress)) {
+    throw new ValidationError("无效的用户地址");
+  }
+
+  // 检查产品是否存在
+  const product = await getProductById(productId);
+  if (!product) {
+    throw new NotFoundError("产品不存在");
+  }
+
+  // 创建订单
+  const order = await createNewOrder(productId, userAddress);
+
+  // 返回创建的订单
+  return NextResponse.json(
+    {
+      success: true,
+      data: {
+        id: order.id,
+        productId: order.productId,
+        userAddress: order.userAddress,
+        price: order.price.toString(),
+        tokenAddress: order.tokenAddress,
+        ownerAddress: order.ownerAddress,
+        chainId: order.chainId,
+        status: order.status,
+        signature: order.signature,
+        createdAt: order.createdAt,
+        expiresAt: order.expiresAt,
+      },
+    },
+    { status: 201 }
+  );
+}
+
+/**
+ * 获取订单详情
+ * @param {Request} request 请求对象
+ * @param {string} orderId 订单ID
+ * @returns {Promise<Response>} 响应对象
+ */
+export async function getOrderByIdController(request, orderId) {
+  // 获取订单信息
+  const order = await getOrderById(orderId);
+  if (!order) {
+    throw new NotFoundError("订单不存在");
+  }
+
+  // 返回订单信息
+  return NextResponse.json({
+    success: true,
+    data: {
+      id: order.id,
+      productId: order.productId,
+      userAddress: order.userAddress,
+      price: order.price.toString(),
+      tokenAddress: order.tokenAddress,
+      ownerAddress: order.ownerAddress,
+      chainId: order.chainId,
+      status: order.status,
+      transactionHash: order.transactionHash,
+      createdAt: order.createdAt,
+      expiresAt: order.expiresAt,
+      isExpired: order.expiresAt < new Date() && order.status === "pending",
+    },
+  });
+}
+
+/**
+ * 更新订单状态
+ * @param {Request} request 请求对象
+ * @param {string} orderId 订单ID
+ * @param {Object} data 更新数据
+ * @returns {Promise<Response>} 响应对象
+ */
+export async function updateOrderStatusController(request, orderId, data) {
+  // 获取订单信息
+  const order = await getOrderById(orderId);
+  if (!order) {
+    throw new NotFoundError("订单不存在");
+  }
+
+  const { status, transactionHash } = data;
+
+  // 验证状态
+  const validStatuses = ["pending", "completed", "failed", "expired"];
+  if (!status || !validStatuses.includes(status)) {
+    throw new ValidationError(
+      `状态必须是以下之一: ${validStatuses.join(", ")}`
+    );
+  }
+
+  // 如果状态是已完成，需要提供交易哈希
+  if (status === "completed" && !transactionHash) {
+    throw new ValidationError("状态为已完成时必须提供交易哈希");
+  }
+
+  // 更新订单状态
+  const additionalData = {};
+  if (transactionHash) {
+    additionalData.transactionHash = transactionHash;
+  }
+
+  const updatedOrder = await updateOrderStatus(orderId, status, additionalData);
+
+  // 返回更新后的订单
+  return NextResponse.json({
+    success: true,
+    data: {
+      id: updatedOrder.id,
+      status: updatedOrder.status,
+      productId: updatedOrder.productId,
+      userAddress: updatedOrder.userAddress,
+      transactionHash: updatedOrder.transactionHash,
+      createdAt: updatedOrder.createdAt,
+      expiresAt: updatedOrder.expiresAt,
+    },
+  });
+}
+
+/**
+ * 获取用户订单列表
+ * @param {Request} request 请求对象
+ * @param {string} userAddress 用户地址
+ * @returns {Promise<Response>} 响应对象
+ */
+export async function getUserOrdersController(request, userAddress) {
+  // 验证用户地址
+  if (!isAddress(userAddress)) {
+    throw new ValidationError("无效的用户地址");
+  }
+
+  // 先更新所有过期订单
+  await updateExpiredOrders();
+
+  // 获取用户订单列表
+  const orders = await getOrdersByUser(userAddress);
+
+  // 格式化订单数据
+  const formattedOrders = orders.map((order) => ({
+    id: order.id,
+    productId: order.productId,
+    price: order.price.toString(),
+    tokenAddress: order.tokenAddress,
+    chainId: order.chainId,
+    status: order.status,
+    transactionHash: order.transactionHash,
+    createdAt: order.createdAt,
+    expiresAt: order.expiresAt,
+    isExpired: order.expiresAt < new Date() && order.status === "pending",
+  }));
+
+  return NextResponse.json({
+    success: true,
+    data: formattedOrders,
+  });
+}

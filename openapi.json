@@ -1,0 +1,1134 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "XFans VLink API",
+        "description": "XFans VLink API 提供了一组端点，用于管理产品和订单。",
+        "version": "1.0.0",
+        "contact": {
+            "name": "XFans VLink 团队"
+        }
+    },
+    "servers": [
+        {
+            "url": "https://xfans-vlink-api.vercel.app/api/v1",
+            "description": "生产环境"
+        },
+        {
+            "url": "http://localhost:3000/api/v1",
+            "description": "开发环境"
+        }
+    ],
+    "tags": [
+        {
+            "name": "产品",
+            "description": "产品相关操作"
+        },
+        {
+            "name": "订单",
+            "description": "订单相关操作"
+        },
+        {
+            "name": "用户",
+            "description": "用户相关操作"
+        },
+        {
+            "name": "工具",
+            "description": "工具相关操作"
+        }
+    ],
+    "paths": {
+        "/products": {
+            "get": {
+                "tags": [
+                    "产品"
+                ],
+                "summary": "获取所有产品",
+                "description": "获取所有可用产品的列表",
+                "operationId": "getAllProducts",
+                "responses": {
+                    "200": {
+                        "description": "成功获取产品列表",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "产品"
+                ],
+                "summary": "创建产品",
+                "description": "创建新产品",
+                "operationId": "createProduct",
+                "requestBody": {
+                    "description": "产品信息",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateProductRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "产品创建成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/products/{id}": {
+            "get": {
+                "tags": [
+                    "产品"
+                ],
+                "summary": "获取单个产品",
+                "description": "获取指定 ID 的产品详情",
+                "operationId": "getProductById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "产品 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功获取产品详情",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "产品不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "产品"
+                ],
+                "summary": "更新产品",
+                "description": "更新指定 ID 的产品",
+                "operationId": "updateProduct",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "产品 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "产品更新信息",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateProductRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "产品更新成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "产品不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "产品"
+                ],
+                "summary": "删除产品",
+                "description": "删除指定 ID 的产品",
+                "operationId": "deleteProduct",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "产品 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "产品删除成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessMessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "产品不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/orders": {
+            "post": {
+                "tags": [
+                    "订单"
+                ],
+                "summary": "创建订单",
+                "description": "创建新订单",
+                "operationId": "createOrder",
+                "requestBody": {
+                    "description": "订单信息",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateOrderRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "订单创建成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "产品不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/orders/{orderId}": {
+            "get": {
+                "tags": [
+                    "订单"
+                ],
+                "summary": "获取订单详情",
+                "description": "获取指定 ID 的订单详情",
+                "operationId": "getOrderById",
+                "parameters": [
+                    {
+                        "name": "orderId",
+                        "in": "path",
+                        "description": "订单 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功获取订单详情",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderDetailResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "订单不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/orders/{orderId}/status": {
+            "post": {
+                "tags": [
+                    "订单"
+                ],
+                "summary": "更新订单状态",
+                "description": "更新指定订单的状态",
+                "operationId": "updateOrderStatus",
+                "parameters": [
+                    {
+                        "name": "orderId",
+                        "in": "path",
+                        "description": "订单 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "订单状态更新信息",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateOrderStatusRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "订单状态更新成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderStatusResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "订单不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{userAddress}/orders": {
+            "get": {
+                "tags": [
+                    "用户"
+                ],
+                "summary": "获取用户订单列表",
+                "description": "获取指定用户的所有订单",
+                "operationId": "getUserOrders",
+                "parameters": [
+                    {
+                        "name": "userAddress",
+                        "in": "path",
+                        "description": "用户的以太坊地址",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功获取用户订单列表",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserOrdersResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "无效的用户地址",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/init-db": {
+            "get": {
+                "tags": [
+                    "工具"
+                ],
+                "summary": "初始化数据库",
+                "description": "初始化数据库并创建示例数据",
+                "operationId": "initDatabase",
+                "responses": {
+                    "200": {
+                        "description": "数据库初始化成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InitDbResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Product": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "产品 ID"
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "产品名称"
+                    },
+                    "image": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "产品图片 URL"
+                    },
+                    "price": {
+                        "type": "string",
+                        "description": "产品价格（以 wei 为单位的字符串）"
+                    },
+                    "tokenAddress": {
+                        "type": "string",
+                        "description": "代币合约地址"
+                    },
+                    "chainId": {
+                        "type": "integer",
+                        "description": "区块链 ID"
+                    },
+                    "ownerAddress": {
+                        "type": "string",
+                        "description": "产品所有者地址"
+                    }
+                },
+                "required": [
+                    "id",
+                    "title",
+                    "image",
+                    "price",
+                    "tokenAddress",
+                    "chainId",
+                    "ownerAddress"
+                ]
+            },
+            "ProductDetail": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/Product"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "createdAt": {
+                                "type": "string",
+                                "format": "date-time",
+                                "description": "创建时间"
+                            },
+                            "updatedAt": {
+                                "type": "string",
+                                "format": "date-time",
+                                "description": "更新时间"
+                            }
+                        }
+                    }
+                ]
+            },
+            "Order": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "订单 ID"
+                    },
+                    "productId": {
+                        "type": "string",
+                        "description": "产品 ID"
+                    },
+                    "userAddress": {
+                        "type": "string",
+                        "description": "用户地址"
+                    },
+                    "price": {
+                        "type": "string",
+                        "description": "订单价格（以 wei 为单位的字符串）"
+                    },
+                    "tokenAddress": {
+                        "type": "string",
+                        "description": "代币合约地址"
+                    },
+                    "ownerAddress": {
+                        "type": "string",
+                        "description": "产品所有者地址"
+                    },
+                    "chainId": {
+                        "type": "integer",
+                        "description": "区块链 ID"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "completed",
+                            "failed",
+                            "expired"
+                        ],
+                        "description": "订单状态"
+                    },
+                    "signature": {
+                        "type": "string",
+                        "description": "签名"
+                    },
+                    "transactionHash": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "交易哈希"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "创建时间"
+                    },
+                    "expiresAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "过期时间"
+                    }
+                }
+            },
+            "OrderDetail": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/Order"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "isExpired": {
+                                "type": "boolean",
+                                "description": "订单是否已过期"
+                            }
+                        }
+                    }
+                ]
+            },
+            "UserOrder": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "订单 ID"
+                    },
+                    "productId": {
+                        "type": "string",
+                        "description": "产品 ID"
+                    },
+                    "price": {
+                        "type": "string",
+                        "description": "订单价格（以 wei 为单位的字符串）"
+                    },
+                    "tokenAddress": {
+                        "type": "string",
+                        "description": "代币合约地址"
+                    },
+                    "chainId": {
+                        "type": "integer",
+                        "description": "区块链 ID"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "completed",
+                            "failed",
+                            "expired"
+                        ],
+                        "description": "订单状态"
+                    },
+                    "transactionHash": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "交易哈希"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "创建时间"
+                    },
+                    "expiresAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "过期时间"
+                    },
+                    "isExpired": {
+                        "type": "boolean",
+                        "description": "订单是否已过期"
+                    }
+                }
+            },
+            "CreateProductRequest": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "产品 ID"
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "产品名称"
+                    },
+                    "image": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "产品图片 URL"
+                    },
+                    "price": {
+                        "type": "string",
+                        "description": "产品价格（以 wei 为单位的字符串）"
+                    },
+                    "tokenAddress": {
+                        "type": "string",
+                        "description": "代币合约地址"
+                    },
+                    "chainId": {
+                        "type": "integer",
+                        "description": "区块链 ID"
+                    },
+                    "ownerAddress": {
+                        "type": "string",
+                        "description": "产品所有者地址"
+                    }
+                },
+                "required": [
+                    "id",
+                    "title",
+                    "image",
+                    "price",
+                    "tokenAddress",
+                    "chainId",
+                    "ownerAddress"
+                ]
+            },
+            "UpdateProductRequest": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "description": "产品名称"
+                    },
+                    "image": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "产品图片 URL"
+                    },
+                    "price": {
+                        "type": "string",
+                        "description": "产品价格（以 wei 为单位的字符串）"
+                    },
+                    "tokenAddress": {
+                        "type": "string",
+                        "description": "代币合约地址"
+                    },
+                    "chainId": {
+                        "type": "integer",
+                        "description": "区块链 ID"
+                    },
+                    "ownerAddress": {
+                        "type": "string",
+                        "description": "产品所有者地址"
+                    }
+                },
+                "minProperties": 1
+            },
+            "CreateOrderRequest": {
+                "type": "object",
+                "properties": {
+                    "productId": {
+                        "type": "string",
+                        "description": "产品 ID"
+                    },
+                    "userAddress": {
+                        "type": "string",
+                        "description": "用户地址"
+                    }
+                },
+                "required": [
+                    "productId",
+                    "userAddress"
+                ]
+            },
+            "UpdateOrderStatusRequest": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "completed",
+                            "failed",
+                            "expired"
+                        ],
+                        "description": "订单状态"
+                    },
+                    "transactionHash": {
+                        "type": "string",
+                        "description": "交易哈希（当状态为 completed 时必填）"
+                    }
+                },
+                "required": [
+                    "status"
+                ]
+            },
+            "ProductListResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "description": "操作是否成功",
+                        "example": true
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Product"
+                        },
+                        "description": "产品列表"
+                    }
+                }
+            },
+            "ProductResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "description": "操作是否成功",
+                        "example": true
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/ProductDetail",
+                        "description": "产品详情"
+                    }
+                }
+            },
+            "OrderResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "description": "操作是否成功",
+                        "example": true
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/Order",
+                        "description": "订单信息"
+                    }
+                }
+            },
+            "OrderDetailResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "description": "操作是否成功",
+                        "example": true
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/OrderDetail",
+                        "description": "订单详情"
+                    }
+                }
+            },
+            "OrderStatusResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "description": "操作是否成功",
+                        "example": true
+                    },
+                    "data": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string",
+                                "description": "订单 ID"
+                            },
+                            "status": {
+                                "type": "string",
+                                "enum": [
+                                    "pending",
+                                    "completed",
+                                    "failed",
+                                    "expired"
+                                ],
+                                "description": "订单状态"
+                            },
+                            "productId": {
+                                "type": "string",
+                                "description": "产品 ID"
+                            },
+                            "userAddress": {
+                                "type": "string",
+                                "description": "用户地址"
+                            },
+                            "transactionHash": {
+                                "type": "string",
+                                "nullable": true,
+                                "description": "交易哈希"
+                            },
+                            "createdAt": {
+                                "type": "string",
+                                "format": "date-time",
+                                "description": "创建时间"
+                            },
+                            "expiresAt": {
+                                "type": "string",
+                                "format": "date-time",
+                                "description": "过期时间"
+                            }
+                        }
+                    }
+                }
+            },
+            "UserOrdersResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "description": "操作是否成功",
+                        "example": true
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/UserOrder"
+                        },
+                        "description": "用户订单列表"
+                    }
+                }
+            },
+            "InitDbResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "description": "操作是否成功",
+                        "example": true
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "操作结果消息",
+                        "example": "数据库初始化成功"
+                    },
+                    "data": {
+                        "type": "object",
+                        "properties": {
+                            "tables": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "初始化的表",
+                                "example": [
+                                    "products",
+                                    "orders"
+                                ]
+                            },
+                            "sampleData": {
+                                "type": "boolean",
+                                "description": "是否创建了示例数据",
+                                "example": true
+                            }
+                        }
+                    }
+                }
+            },
+            "SuccessMessageResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "description": "操作是否成功",
+                        "example": true
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "操作结果消息",
+                        "example": "产品删除成功"
+                    }
+                }
+            },
+            "ErrorResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "description": "操作是否成功",
+                        "example": false
+                    },
+                    "error": {
+                        "type": "object",
+                        "properties": {
+                            "code": {
+                                "type": "string",
+                                "description": "错误代码",
+                                "example": "VALIDATION_ERROR"
+                            },
+                            "message": {
+                                "type": "string",
+                                "description": "错误消息",
+                                "example": "请求数据验证失败"
+                            },
+                            "details": {
+                                "type": "object",
+                                "description": "错误详情（可选）",
+                                "additionalProperties": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "required": [
+                            "code",
+                            "message"
+                        ]
+                    }
+                }
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "description": "使用以太坊地址作为 Bearer Token"
+            },
+            "cookieAuth": {
+                "type": "apiKey",
+                "in": "cookie",
+                "name": "userAddress",
+                "description": "使用以太坊地址作为 Cookie 值"
+            },
+            "queryAuth": {
+                "type": "apiKey",
+                "in": "query",
+                "name": "address",
+                "description": "使用以太坊地址作为查询参数"
+            }
+        }
+    },
+    "security": [
+        {
+            "bearerAuth": []
+        },
+        {
+            "cookieAuth": []
+        },
+        {
+            "queryAuth": []
+        }
+    ]
+}
