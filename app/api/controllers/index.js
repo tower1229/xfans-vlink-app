@@ -13,6 +13,7 @@ export {
   getOrderByIdController,
   updateOrderStatusController,
   getUserOrdersController,
+  getAllOrdersController,
 } from "./orderController";
 
 // 导出数据库控制器

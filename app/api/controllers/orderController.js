@@ -6,6 +6,7 @@ import {
   getOrdersByUser,
   updateExpiredOrders,
   getProductById,
+  getAllOrders,
 } from "@/utils";
 import { NotFoundError, ValidationError } from "../middleware/errorHandler";
 import {
@@ -199,28 +200,20 @@ export async function updateOrderStatusController(request, orderId, data) {
     throw new NotFoundError("订单不存在");
   }
 
-  const { status, transactionHash } = data;
+  const { status } = data;
 
-  // 验证状态
-  const validStatuses = ["pending", "completed", "failed", "expired"];
-  if (!status || !validStatuses.includes(status)) {
-    throw new ValidationError(
-      `状态必须是以下之一: ${validStatuses.join(", ")}`
-    );
+  // 验证状态 - 只允许更新为closed状态
+  if (status !== "closed") {
+    throw new ValidationError("订单只能被更新为已关闭(closed)状态");
   }
 
-  // 如果状态是已完成，需要提供交易哈希
-  if (status === "completed" && !transactionHash) {
-    throw new ValidationError("状态为已完成时必须提供交易哈希");
+  // 验证当前订单状态 - 只有pending状态的订单可以被关闭
+  if (order.status !== "pending") {
+    throw new ValidationError("只有待支付(pending)状态的订单可以被关闭");
   }
 
   // 更新订单状态
-  const additionalData = {};
-  if (transactionHash) {
-    additionalData.transactionHash = transactionHash;
-  }
-
-  const updatedOrder = await updateOrderStatus(orderId, status, additionalData);
+  const updatedOrder = await updateOrderStatus(orderId, status);
 
   // 返回更新后的订单
   return NextResponse.json({
@@ -273,4 +266,45 @@ export async function getUserOrdersController(request, userAddress) {
     success: true,
     data: formattedOrders,
   });
+}
+
+/**
+ * 获取所有订单列表
+ * @param {Request} request 请求对象
+ * @returns {Promise<Response>} 响应对象
+ */
+export async function getAllOrdersController(request) {
+  try {
+    // 获取查询参数
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get("status");
+
+    // 获取所有订单
+    const orders = await getAllOrders(status);
+
+    // 格式化订单数据
+    const formattedOrders = orders.map((order) => ({
+      id: order.id,
+      productId: order.productId,
+      userAddress: order.userAddress,
+      price: order.price.toString(),
+      tokenAddress: order.tokenAddress,
+      ownerAddress: order.ownerAddress,
+      chainId: order.chainId,
+      status: order.status,
+      transactionHash: order.transactionHash,
+      createdAt: order.createdAt,
+      expiresAt: order.expiresAt,
+      isExpired: order.expiresAt < new Date() && order.status === "pending",
+    }));
+
+    // 返回订单列表
+    return NextResponse.json({
+      success: true,
+      data: formattedOrders,
+    });
+  } catch (error) {
+    console.error("获取所有订单失败:", error);
+    throw error;
+  }
 }

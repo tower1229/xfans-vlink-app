@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
-import { updateOrderStatusController } from "../../../../../controllers";
-import { updateOrderStatusSchema } from "../../../../../schemas";
+import { updateOrderStatusController } from "../../../../controllers";
+import { updateOrderStatusSchema } from "../../../../schemas";
 import {
   validateData,
   createValidationErrorResponse,
   createServerErrorResponse,
-} from "../../../../../utils/validation";
+} from "../../../../utils/validation";
 
 // 更新订单状态
-export async function POST(request, context) {
+export async function PUT(request, { params }) {
   try {
-    // 异步获取参数
-    const { orderId } = await context.params;
+    const { orderId } = params;
 
     // 获取请求数据
     const data = await request.json();
@@ -22,7 +21,7 @@ export async function POST(request, context) {
       return createValidationErrorResponse(validation.errors);
     }
 
-    // 调用控制器
+    // 调用控制器更新订单状态
     return await updateOrderStatusController(request, orderId, validation.data);
   } catch (error) {
     return createServerErrorResponse(error);

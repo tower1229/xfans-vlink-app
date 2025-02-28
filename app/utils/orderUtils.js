@@ -1,11 +1,11 @@
 import {
   keccak256,
   encodePacked,
-  signMessage,
   toHex,
   encodeAbiParameters,
   parseAbiParameters,
 } from "viem";
+import { signMessage } from "viem/accounts";
 // Remove the circular import
 import { executeQuery } from "./db";
 import { getProductById } from "./productUtils";
@@ -248,6 +248,33 @@ export async function getOrdersByProduct(productId) {
 }
 
 /**
+ * 获取所有订单
+ * @param {string|null} status 可选的状态过滤
+ * @returns {Promise<Array>} 订单列表
+ */
+export async function getAllOrders(status = null) {
+  try {
+    let query = "SELECT * FROM orders";
+    const params = [];
+
+    // 如果提供了状态，添加状态过滤
+    if (status) {
+      query += " WHERE status = $1";
+      params.push(status);
+    }
+
+    // 添加排序
+    query += " ORDER BY created_at DESC";
+
+    const rows = await executeQuery(query, params);
+    return rows.map(formatOrderFromDb);
+  } catch (error) {
+    console.error("获取所有订单列表失败:", error);
+    throw new Error(`获取所有订单列表失败: ${error.message}`);
+  }
+}
+
+/**
  * 更新过期订单状态
  * @returns {Promise<number>} 更新的订单数量
  */
@@ -353,4 +380,5 @@ export default {
   updateExpiredOrders,
   createNewOrder,
   generateOrderSignature,
+  getAllOrders,
 };

@@ -27,3 +27,12 @@ export async function initializeDatabase() {
     return false;
   }
 }
+
+export {
+  getOrderById,
+  createNewOrder,
+  updateOrderStatus,
+  getOrdersByUser,
+  updateExpiredOrders,
+  getAllOrders,
+} from "./orderUtils";

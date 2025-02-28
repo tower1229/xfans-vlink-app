@@ -14,16 +14,11 @@ export const createOrderSchema = z.object({
 });
 
 // 更新订单状态验证模式
-export const updateOrderStatusSchema = z
-  .object({
-    status: z.enum(["pending", "completed", "failed", "expired"], {
-      errorMap: () => ({
-        message: "状态必须是以下之一: pending, completed, failed, expired",
-      }),
+export const updateOrderStatusSchema = z.object({
+  status: z.enum(["closed"], {
+    errorMap: () => ({
+      message: "订单只能被更新为已关闭(closed)状态",
     }),
-    transactionHash: z.string().optional(),
-  })
-  .refine((data) => !(data.status === "completed" && !data.transactionHash), {
-    message: "状态为completed时必须提供transactionHash",
-    path: ["transactionHash"],
-  });
+  }),
+  transactionHash: z.string().optional(),
+});

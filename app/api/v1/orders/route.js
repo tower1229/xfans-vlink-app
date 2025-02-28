@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { createOrderController } from "../../controllers";
+import {
+  createOrderController,
+  getAllOrdersController,
+} from "../../controllers";
 import { createOrderSchema } from "../../schemas";
 import {
   validateData,
@@ -21,6 +24,16 @@ export async function POST(request) {
 
     // 调用控制器
     return await createOrderController(request, validation.data);
+  } catch (error) {
+    return createServerErrorResponse(error);
+  }
+}
+
+// 获取所有订单
+export async function GET(request) {
+  try {
+    // 调用控制器获取所有订单
+    return await getAllOrdersController(request);
   } catch (error) {
     return createServerErrorResponse(error);
   }

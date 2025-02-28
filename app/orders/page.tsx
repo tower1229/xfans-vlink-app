@@ -1,97 +1,162 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "../dashboard-layout";
+import { useRouter } from "next/navigation";
+
+// Define the Order type
+interface Order {
+  id: string;
+  customer: string;
+  date: string;
+  total: string;
+  status: string;
+  items: number;
+  userAddress?: string;
+  productId?: string;
+  transactionHash?: string;
+}
 
 export default function Orders() {
   const [activeTab, setActiveTab] = useState("all");
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [closing, setClosing] = useState<string | null>(null);
+  const router = useRouter();
 
-  // Sample orders data
-  const orders = [
-    {
-      id: "ORD-1001",
-      customer: "Zhang Wei",
-      date: "2023-05-15",
-      total: "¥299.00",
-      status: "completed",
-      items: 2,
-    },
-    {
-      id: "ORD-1002",
-      customer: "Li Na",
-      date: "2023-05-14",
-      total: "¥149.50",
-      status: "processing",
-      items: 1,
-    },
-    {
-      id: "ORD-1003",
-      customer: "Wang Fei",
-      date: "2023-05-14",
-      total: "¥499.00",
-      status: "completed",
-      items: 3,
-    },
-    {
-      id: "ORD-1004",
-      customer: "Chen Jie",
-      date: "2023-05-13",
-      total: "¥79.99",
-      status: "completed",
-      items: 1,
-    },
-    {
-      id: "ORD-1005",
-      customer: "Liu Yang",
-      date: "2023-05-12",
-      total: "¥199.00",
-      status: "cancelled",
-      items: 2,
-    },
-    {
-      id: "ORD-1006",
-      customer: "Zhao Min",
-      date: "2023-05-11",
-      total: "¥349.00",
-      status: "processing",
-      items: 2,
-    },
-    {
-      id: "ORD-1007",
-      customer: "Sun Ling",
-      date: "2023-05-10",
-      total: "¥129.00",
-      status: "completed",
-      items: 1,
-    },
-    {
-      id: "ORD-1008",
-      customer: "Wu Hao",
-      date: "2023-05-09",
-      total: "¥599.00",
-      status: "refunded",
-      items: 4,
-    },
-  ];
+  // Fetch orders from API
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        // Build the API URL with status filter if not "all"
+        const url = activeTab === "all"
+          ? '/api/v1/orders'
+          : `/api/v1/orders?status=${activeTab}`;
 
-  const filteredOrders =
-    activeTab === "all"
-      ? orders
-      : orders.filter((order) => order.status === activeTab);
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(`Error fetching orders: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Transform API data to match our component's expected format
+          const formattedOrders = data.data.map((order: any) => ({
+            id: order.id,
+            customer: order.userAddress.substring(0, 6) + '...' + order.userAddress.substring(38),
+            date: new Date(order.createdAt).toLocaleDateString(),
+            total: `¥${order.price}`,
+            status: order.status,
+            items: 1, // Assuming each order has one item
+            userAddress: order.userAddress,
+            productId: order.productId,
+            transactionHash: order.transactionHash
+          }));
+
+          setOrders(formattedOrders);
+        } else {
+          throw new Error(data.message || 'Failed to fetch orders');
+        }
+      } catch (err) {
+        console.error('Error fetching orders:', err);
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [activeTab]); // Re-fetch when activeTab changes
+
+  // No need for client-side filtering since we're filtering on the server
+  const filteredOrders = orders;
 
   const getStatusClass = (status: string) => {
     switch (status) {
       case "completed":
         return "bg-green-100 text-green-800";
-      case "processing":
+      case "pending":
         return "bg-blue-100 text-blue-800";
-      case "cancelled":
+      case "closed":
         return "bg-red-100 text-red-800";
-      case "refunded":
-        return "bg-yellow-100 text-yellow-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+
+  // Translate status to Chinese
+  const translateStatus = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "待支付";
+      case "completed":
+        return "已支付";
+      case "closed":
+        return "已关闭";
+      default:
+        return status;
+    }
+  };
+
+  // Handle view order details
+  const handleViewOrder = (orderId: string) => {
+    router.push(`/orders/${orderId}`);
+  };
+
+  // Handle close order
+  const handleCloseOrder = async (orderId: string) => {
+    if (!confirm('确定要关闭此订单吗？此操作不可撤销。')) {
+      return;
+    }
+
+    try {
+      setClosing(orderId);
+
+      const payload = { status: "closed" };
+
+      const response = await fetch(`/api/v1/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error updating order: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update the local order state
+        setOrders(prev =>
+          prev.map(order =>
+            order.id === orderId
+              ? { ...order, status: "closed" }
+              : order
+          )
+        );
+        alert('订单已成功关闭');
+      } else {
+        throw new Error(data.message || 'Failed to close order');
+      }
+    } catch (err) {
+      console.error('Error closing order:', err);
+      alert(err instanceof Error ? err.message : 'An unknown error occurred');
+    } finally {
+      setClosing(null);
+    }
+  };
+
+  // Handle export orders
+  const handleExportOrders = () => {
+    // Implementation for exporting orders
+    alert('导出功能即将实现');
   };
 
   return (
@@ -101,53 +166,39 @@ export default function Orders() {
           <nav className="flex -mb-px">
             <button
               onClick={() => setActiveTab("all")}
-              className={`py-4 px-6 text-sm font-medium ${
-                activeTab === "all"
-                  ? "border-b-2 border-blue-500 text-blue-600"
-                  : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+              className={`py-4 px-6 text-sm font-medium ${activeTab === "all"
+                ? "border-b-2 border-blue-500 text-blue-600"
+                : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
             >
-              All Orders
+              全部订单
+            </button>
+            <button
+              onClick={() => setActiveTab("pending")}
+              className={`py-4 px-6 text-sm font-medium ${activeTab === "pending"
+                ? "border-b-2 border-blue-500 text-blue-600"
+                : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+            >
+              待支付
             </button>
             <button
               onClick={() => setActiveTab("completed")}
-              className={`py-4 px-6 text-sm font-medium ${
-                activeTab === "completed"
-                  ? "border-b-2 border-blue-500 text-blue-600"
-                  : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+              className={`py-4 px-6 text-sm font-medium ${activeTab === "completed"
+                ? "border-b-2 border-blue-500 text-blue-600"
+                : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
             >
-              Completed
+              已支付
             </button>
             <button
-              onClick={() => setActiveTab("processing")}
-              className={`py-4 px-6 text-sm font-medium ${
-                activeTab === "processing"
-                  ? "border-b-2 border-blue-500 text-blue-600"
-                  : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+              onClick={() => setActiveTab("closed")}
+              className={`py-4 px-6 text-sm font-medium ${activeTab === "closed"
+                ? "border-b-2 border-blue-500 text-blue-600"
+                : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
             >
-              Processing
-            </button>
-            <button
-              onClick={() => setActiveTab("cancelled")}
-              className={`py-4 px-6 text-sm font-medium ${
-                activeTab === "cancelled"
-                  ? "border-b-2 border-blue-500 text-blue-600"
-                  : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              Cancelled
-            </button>
-            <button
-              onClick={() => setActiveTab("refunded")}
-              className={`py-4 px-6 text-sm font-medium ${
-                activeTab === "refunded"
-                  ? "border-b-2 border-blue-500 text-blue-600"
-                  : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              Refunded
+              已关闭
             </button>
           </nav>
         </div>
@@ -157,94 +208,125 @@ export default function Orders() {
             <div>
               <h3 className="text-lg font-medium text-gray-800">
                 {activeTab === "all"
-                  ? "All Orders"
-                  : `${
-                      activeTab.charAt(0).toUpperCase() + activeTab.slice(1)
-                    } Orders`}
+                  ? "全部订单"
+                  : `${translateStatus(activeTab)}`}
               </h3>
               <p className="text-sm text-gray-500">
-                {filteredOrders.length} orders
+                {filteredOrders.length} 个订单
               </p>
             </div>
             <div className="flex space-x-2">
-              <button className="bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50">
-                Export
-              </button>
-              <button className="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">
-                Create Order
+              <button
+                onClick={handleExportOrders}
+                className="bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50"
+              >
+                导出
               </button>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead>
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Order ID
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Customer
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Items
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredOrders.map((order) => (
-                  <tr key={order.id}>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
-                      {order.id}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {order.customer}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {order.date}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                      {order.total}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {order.items}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      <span
-                        className={`px-2 py-1 text-xs rounded-full ${getStatusClass(
-                          order.status
-                        )}`}
-                      >
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div className="flex space-x-2">
-                        <button className="text-blue-600 hover:text-blue-800">
-                          View
-                        </button>
-                        <button className="text-gray-600 hover:text-gray-800">
-                          Edit
-                        </button>
-                      </div>
-                    </td>
+          {loading ? (
+            <div className="flex justify-center items-center py-10">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+            </div>
+          ) : error ? (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+              <p>{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-2 text-sm text-red-600 underline"
+              >
+                重试
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead>
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      订单 ID
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      客户
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      日期
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      金额
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      数量
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      状态
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      操作
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredOrders.length > 0 ? (
+                    filteredOrders.map((order) => (
+                      <tr key={order.id}>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
+                          {order.id.substring(0, 10)}...
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {order.customer}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {order.date}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                          {order.total}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {order.items}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm">
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${getStatusClass(
+                              order.status
+                            )}`}
+                          >
+                            {translateStatus(order.status)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleViewOrder(order.id)}
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              查看
+                            </button>
+                            {order.status === 'pending' && (
+                              <button
+                                onClick={() => handleCloseOrder(order.id)}
+                                disabled={closing === order.id}
+                                className="text-red-600 hover:text-red-800 disabled:opacity-50"
+                              >
+                                {closing === order.id ? '处理中...' : '关闭'}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                        没有找到订单
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>
