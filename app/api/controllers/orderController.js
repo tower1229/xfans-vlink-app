@@ -15,8 +15,8 @@ import {
   parseAbiParameters,
   keccak256,
   toHex,
-  signMessage,
 } from "viem";
+import { signMessage } from "viem/accounts";
 
 /**
  * 创建订单
