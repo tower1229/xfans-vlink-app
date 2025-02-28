@@ -2,43 +2,10 @@
 export * from "./orderUtils";
 export * from "./chainUtils";
 export * from "./walletUtils";
-
-// 导出订单工具函数
-export {
-  generateOrderId,
-  createOrder,
-  getOrderById,
-  updateOrderStatus,
-  getActiveOrderByUserAndProduct,
-  getOrdersByUser,
-  getOrdersByProduct,
-  updateExpiredOrders,
-  createNewOrder,
-} from "./orderUtils";
-
-// 导出产品工具函数
-export {
-  getAllProducts,
-  getProductById,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-  initSampleProducts,
-  generateProductId,
-} from "./productUtils";
-
-// 导出链工具函数
-export {
-  isSupportedChain,
-  getSupportedChainIds,
-  getChainById,
-} from "./chainUtils";
-
-// 导出钱包工具函数
-export { getWalletClient, clearWalletClientCache } from "./walletUtils";
+export * from "./productUtils";
 
 // 导出数据库工具函数
-export { executeQuery, initDatabase } from "./db";
+export * from "./db";
 
 // 导出数据库初始化函数
 export async function initializeDatabase() {

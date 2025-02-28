@@ -62,7 +62,8 @@ export default function TestPage() {
       setPublicClient(publicClient);
 
       // 使用硬编码的私钥初始化钱包客户端（仅用于测试）
-      const testPrivateKey = process.env.NEXT_PUBLIC_WALLET_PRIVATE_KEY; // 替换为测试私钥
+      const testPrivateKey =
+        "55353dfe8cf267312c2f81ebfbcee94468836bddb780f00e0e700f37095febf5"; // 替换为测试私钥
 
       try {
         console.log(`0x${testPrivateKey}`);
@@ -72,7 +73,7 @@ export default function TestPage() {
         const walletClient = createWalletClient({
           account,
           chain: mainnet,
-          transport: http()
+          transport: http(),
         });
 
         setWalletClient(walletClient);

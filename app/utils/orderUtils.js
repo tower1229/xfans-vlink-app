@@ -1,7 +1,14 @@
-import { keccak256, encodePacked } from "viem";
+import {
+  keccak256,
+  encodePacked,
+  signMessage,
+  toHex,
+  encodeAbiParameters,
+  parseAbiParameters,
+} from "viem";
 // Remove the circular import
-// import { generateOrderId } from "@/utils";
 import { executeQuery } from "./db";
+import { getProductById } from "./productUtils";
 
 /**
  * 生成唯一的订单ID
@@ -27,6 +34,51 @@ export function generateOrderId(productId, userAddress) {
     orderId,
     timestamp,
   };
+}
+
+/**
+ * 为订单生成签名
+ * @param {Object} orderData 订单数据
+ * @returns {Promise<string>} 签名
+ */
+export async function generateOrderSignature(orderData) {
+  try {
+    // 从环境变量获取私钥
+    const privateKey = process.env.SIGNER_PRIVATE_KEY;
+    if (!privateKey) {
+      throw new Error("未配置签名私钥");
+    }
+
+    // 获取当前时间戳（秒）
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    // 构建要签名的消息 - 使用与合约一致的格式
+    const message = encodeAbiParameters(
+      parseAbiParameters("bytes32, uint256, address, address, uint32, uint64"),
+      [
+        orderData.id, // orderId (bytes32)
+        BigInt(orderData.price.toString()), // amount (uint256)
+        orderData.tokenAddress, // token (address)
+        orderData.ownerAddress, // sellerAddress (address)
+        timestamp, // timestamp (uint32)
+        BigInt(orderData.chainId), // chainId (uint64)
+      ]
+    );
+
+    // 计算消息哈希
+    const messageHash = keccak256(message);
+
+    // 签名消息
+    const signature = await signMessage({
+      message: { raw: toHex(messageHash) },
+      privateKey,
+    });
+
+    return signature;
+  } catch (error) {
+    console.error("生成订单签名失败:", error);
+    throw new Error(`生成订单签名失败: ${error.message}`);
+  }
 }
 
 /**
@@ -239,7 +291,15 @@ export async function createNewOrder(productId, userAddress, product) {
     const { orderId, timestamp } = generateOrderId(productId, userAddress);
     const expiresAt = new Date(timestamp + 3600000); // 1小时后过期
 
-    // 创建新订单
+    // 如果没有传入产品对象，则获取产品信息
+    if (!product) {
+      product = await getProductById(productId);
+      if (!product) {
+        throw new Error("产品不存在");
+      }
+    }
+
+    // 创建新订单数据
     const orderData = {
       id: orderId,
       productId,
@@ -252,6 +312,7 @@ export async function createNewOrder(productId, userAddress, product) {
       expiresAt,
     };
 
+    // 创建订单
     return await createOrder(orderData);
   } catch (error) {
     console.error("创建新订单失败:", error);
@@ -291,4 +352,5 @@ export default {
   getOrdersByProduct,
   updateExpiredOrders,
   createNewOrder,
+  generateOrderSignature,
 };
