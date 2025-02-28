@@ -1,5 +1,6 @@
 import { createWalletClient } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
+import { http } from "viem";
 import { getChainById } from "@/utils/chainUtils";
 
 // 缓存配置
@@ -90,6 +91,7 @@ export function getWalletClient(privateKey, chainId) {
   const walletClient = createWalletClient({
     account,
     chain,
+    transport: http(),
   });
 
   // 检查缓存大小

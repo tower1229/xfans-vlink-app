@@ -61,20 +61,31 @@ export async function createOrderController(request, data) {
   // 计算消息哈希
   const messageHash = keccak256(encodedOrderData);
 
-  // 签名消息
-  let signature = "0x";
+  // 签名消息 - 不使用 raw 选项，让 viem 自动添加以太坊签名前缀
+  let signature;
   try {
-    const privateKey = process.env.SIGNER_PRIVATE_KEY;
-    if (privateKey) {
-      signature = await signMessage({
-        message: { raw: toHex(messageHash) },
-        privateKey,
-      });
-    } else {
-      console.warn("未配置签名私钥，将使用空签名");
+    const privateKey = process.env.VERIFIER_PRIVATE_KEY;
+
+    // 检查私钥是否存在且不为空
+    if (!privateKey || privateKey.trim() === "") {
+      throw new Error(
+        "未配置签名私钥，无法创建订单。请在环境变量中设置VERIFIER_PRIVATE_KEY"
+      );
     }
+
+    // 格式化私钥，确保有0x前缀
+    const formattedPrivateKey = privateKey.startsWith("0x")
+      ? privateKey
+      : `0x${privateKey}`;
+
+    // 使用 messageHash 作为普通消息签名，viem 会自动添加前缀
+    signature = await signMessage({
+      message: { raw: messageHash }, // 使用 messageHash 作为原始字节数据
+      privateKey: formattedPrivateKey,
+    });
   } catch (error) {
-    console.warn("生成订单签名失败:", error.message);
+    console.error("生成订单签名失败:", error.message);
+    throw new ValidationError(`签名生成失败: ${error.message}`);
   }
 
   // 定义支付合约地址

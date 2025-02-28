@@ -1,57 +1,96 @@
 "use client";
 
-import React, { useState } from "react";
-import { isAddress, decodeFunctionData, parseAbi, encodeFunctionData, fromHex, toHex } from "viem";
+import React, { useState, useEffect } from "react";
+import { isAddress, decodeFunctionData, parseAbi, encodeFunctionData } from "viem";
+import { WalletClient, createPublicClient, http } from "viem";
+import { mainnet, sepolia } from "viem/chains";
 import DashboardLayout from "../dashboard-layout";
-
-// 为window.ethereum添加类型声明
-declare global {
-  interface Window {
-    ethereum?: any;
-  }
-}
+import { getWalletClient } from "@/utils/walletUtils";
 
 // 定义交易参数类型
 interface TransactionParams {
-  from: string;
-  to: string;
-  data: string;
+  to: `0x${string}`;
+  data: `0x${string}`;
   value?: string;
   chainId?: string;
-  gas?: string;
-  gasPrice?: string;
-  maxFeePerGas?: string;
-  maxPriorityFeePerGas?: string;
+  gas?: bigint;
 }
 
 export default function TestPage() {
-  const [productId, setProductId] = useState("");
+  const [productId, setProductId] = useState("prod_m7oeu9xk_hf6i");
   const [userAddress, setUserAddress] = useState("");
+  const [chainId] = useState("11155111"); // 固定为Sepolia测试网
   const [txStatus, setTxStatus] = useState("");
   const [loading, setLoading] = useState(false);
-  const [useHighGas, setUseHighGas] = useState(false);
-  const [customGasLimit, setCustomGasLimit] = useState("1000000"); // 默认较高的gas limit
+  const [useHighGas, setUseHighGas] = useState(true); // 默认启用高gas
+  const [customGasLimit, setCustomGasLimit] = useState("10000000"); // 默认较高的gas limit
+  const [walletClient, setWalletClient] = useState<WalletClient | null>(null);
+  const [publicClient, setPublicClient] = useState<any>(null);
+
+  // 初始化时自动连接钱包
+  useEffect(() => {
+    // 自动连接钱包
+    connectWallet();
+  }, [chainId]);
 
   // 连接钱包获取地址
   const connectWallet = async () => {
     try {
       setTxStatus("正在连接钱包...");
 
-      // 检查是否有MetaMask
-      if (!window.ethereum) {
-        throw new Error("请安装MetaMask钱包");
+      // 从环境变量获取私钥 (需要使用NEXT_PUBLIC_前缀的环境变量)
+      const privateKey = process.env.NEXT_PUBLIC_VERIFIER_PRIVATE_KEY;
+      const paymentContractAddress = process.env.NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS;
+
+      // 检查私钥是否存在且不为空
+      if (!privateKey || privateKey.trim() === '') {
+        throw new Error("环境变量中未设置NEXT_PUBLIC_VERIFIER_PRIVATE_KEY或私钥为空");
       }
 
-      // 请求账户
-      const accounts = await window.ethereum.request({
-        method: "eth_requestAccounts",
+      // 检查私钥格式是否正确
+      if (privateKey.replace(/^0x/, '').length !== 64) {
+        throw new Error("私钥格式不正确，应为32字节的十六进制字符串（带或不带0x前缀）");
+      }
+
+      if (!paymentContractAddress) {
+        throw new Error("环境变量中未设置NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS");
+      }
+
+      if (!chainId) {
+        throw new Error("链ID未设置");
+      }
+
+      // 获取链对象
+      const chain = sepolia; // 固定使用Sepolia测试网
+
+      // 使用私钥和链ID创建钱包客户端
+      const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+      const client = getWalletClient(formattedPrivateKey as `0x${string}`, parseInt(chainId));
+      // 使用类型断言确保类型兼容
+      setWalletClient(client as WalletClient);
+
+      // 创建公共客户端用于读取操作
+      const pubClient = createPublicClient({
+        chain,
+        transport: http(),
       });
-      const account = accounts[0];
-      setUserAddress(account);
-      setTxStatus(`钱包已连接: ${account}`);
+      setPublicClient(pubClient);
+
+      // 获取账户地址
+      // 使用类型断言访问account属性
+      const account = (client as any).account?.address;
+      if (account) {
+        setUserAddress(account);
+        setTxStatus(`钱包已连接: ${account}\n合约地址: ${paymentContractAddress}`);
+      } else {
+        throw new Error("无法获取钱包地址");
+      }
     } catch (error: any) {
       console.error("连接钱包失败:", error);
       setTxStatus("错误: " + error.message);
+      // 清除钱包客户端状态，确保UI显示未连接状态
+      setWalletClient(null);
+      setUserAddress("");
     }
   };
 
@@ -86,6 +125,13 @@ export default function TestPage() {
   // 处理ERC20授权
   const handleERC20Approval = async (tokenAddress: string, amount: bigint, spenderAddress: string) => {
     try {
+      if (!walletClient || !publicClient || !walletClient.account) {
+        throw new Error("钱包未连接");
+      }
+
+      // 获取链对象
+      const chain = sepolia; // 固定使用Sepolia测试网
+
       setTxStatus("正在授权ERC20代币...");
 
       // ERC20 ABI
@@ -95,20 +141,12 @@ export default function TestPage() {
       ]);
 
       // 检查当前授权额度
-      const allowanceResult = await window.ethereum.request({
-        method: 'eth_call',
-        params: [{
-          to: tokenAddress,
-          data: encodeFunctionData({
-            abi: erc20Abi,
-            functionName: 'allowance',
-            args: [userAddress as `0x${string}`, spenderAddress as `0x${string}`],
-          }),
-        }, 'latest'],
+      const currentAllowance = await publicClient.readContract({
+        address: tokenAddress as `0x${string}`,
+        abi: erc20Abi,
+        functionName: 'allowance',
+        args: [userAddress as `0x${string}`, spenderAddress as `0x${string}`],
       });
-
-      // 将结果转换为bigint
-      const currentAllowance = BigInt(allowanceResult || '0x0');
 
       // 如果授权额度不足，则进行授权
       if (currentAllowance < amount) {
@@ -120,19 +158,17 @@ export default function TestPage() {
         });
 
         // 发送授权交易
-        const approveTxHash = await window.ethereum.request({
-          method: 'eth_sendTransaction',
-          params: [{
-            from: userAddress,
-            to: tokenAddress,
-            data: approveData,
-          }],
+        const approveTxHash = await walletClient.sendTransaction({
+          account: walletClient.account,
+          chain,
+          to: tokenAddress as `0x${string}`,
+          data: approveData,
         });
 
         setTxStatus(`ERC20授权交易已发送: ${approveTxHash}`);
 
         // 等待授权交易确认
-        await waitForTransaction(approveTxHash);
+        const receipt = await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
         setTxStatus(`ERC20授权已完成: ${approveTxHash}`);
       } else {
         setTxStatus("ERC20授权额度已足够，无需再次授权");
@@ -146,84 +182,71 @@ export default function TestPage() {
     }
   };
 
-  // 等待交易确认
-  const waitForTransaction = async (txHash: string) => {
-    return new Promise((resolve, reject) => {
-      const checkTx = async () => {
-        try {
-          const receipt = await window.ethereum.request({
-            method: 'eth_getTransactionReceipt',
-            params: [txHash],
-          });
+  // 估算交易所需的gas
+  const estimateGas = async (txParams: TransactionParams): Promise<bigint> => {
+    try {
+      if (!walletClient || !publicClient || !walletClient.account) {
+        throw new Error("钱包未连接");
+      }
 
-          if (receipt) {
-            resolve(receipt);
-          } else {
-            setTimeout(checkTx, 2000); // 每2秒检查一次
-          }
-        } catch (error) {
-          reject(error);
-        }
+      // 创建一个用于估算的参数对象
+      const estimateParams = {
+        account: walletClient.account,
+        to: txParams.to,
+        data: txParams.data,
+        value: txParams.value ? BigInt(txParams.value) : undefined,
       };
 
-      checkTx();
-    });
-  };
+      try {
+        // 调用estimateGas方法
+        const gasEstimate = await publicClient.estimateGas(estimateParams);
 
-  // 估算交易所需的gas
-  const estimateGas = async (txParams: TransactionParams): Promise<string> => {
-    try {
-      // 创建一个用于估算的参数对象
-      const estimateParams = { ...txParams };
+        // 将估算结果增加50%作为安全边际，因为这个合约操作复杂
+        const gasWithBuffer = gasEstimate * BigInt(15) / BigInt(10);
 
-      // 调用eth_estimateGas方法
-      const gasEstimate = await window.ethereum.request({
-        method: 'eth_estimateGas',
-        params: [estimateParams],
-      });
+        // 确保gas不低于一个最小值
+        const minGas = BigInt(500000); // 为复杂合约设置较高的最小值
+        const finalGas = gasWithBuffer > minGas ? gasWithBuffer : minGas;
 
-      // 将估算结果增加50%作为安全边际，因为这个合约操作复杂
-      const gasEstimateNum = parseInt(gasEstimate, 16);
-      const gasWithBuffer = Math.floor(gasEstimateNum * 1.5);
+        console.log(`Gas估算: 原始=${gasEstimate}, 带缓冲=${gasWithBuffer}, 最终=${finalGas}`);
 
-      // 确保gas不低于一个最小值
-      const minGas = 500000; // 为复杂合约设置较高的最小值
-      const finalGas = Math.max(gasWithBuffer, minGas);
-
-      console.log(`Gas估算: 原始=${gasEstimateNum}, 带缓冲=${gasWithBuffer}, 最终=${finalGas}`);
-
-      return '0x' + finalGas.toString(16);
-    } catch (error) {
+        return finalGas;
+      } catch (error: any) {
+        console.error("估算gas失败:", error);
+        // 如果估算失败，返回一个非常高的默认值
+        setTxStatus(`估算gas失败: ${error.message || "未知错误"}\n使用默认高gas限制: ${customGasLimit}`);
+        return BigInt(parseInt(customGasLimit)); // 使用自定义的高gas限制
+      }
+    } catch (error: any) {
       console.error("估算gas失败:", error);
-      // 如果估算失败，返回一个非常高的默认值，因为这是一个复杂的支付合约
-      return '0x' + (800000).toString(16); // 设置一个非常高的gas limit
+      // 如果估算失败，返回一个非常高的默认值
+      return BigInt(parseInt(customGasLimit)); // 使用自定义的高gas限制
     }
   };
 
   // 检查用户余额是否足够支付交易
-  const checkBalance = async (txParams: TransactionParams, gasLimit: string): Promise<boolean> => {
+  const checkBalance = async (txParams: TransactionParams, gasLimit: bigint): Promise<boolean> => {
     try {
+      if (!walletClient || !publicClient || !walletClient.account) {
+        throw new Error("钱包未连接");
+      }
+
       // 获取当前gas价格
-      const gasPrice = await window.ethereum.request({
-        method: 'eth_gasPrice',
-      });
+      const gasPrice = await publicClient.getGasPrice();
 
       // 计算交易所需的总ETH（交易value + gas费用）
       const valueWei = txParams.value ? BigInt(txParams.value) : BigInt(0);
-      const gasCostWei = BigInt(gasLimit) * BigInt(gasPrice);
+      const gasCostWei = gasLimit * gasPrice;
       const totalRequired = valueWei + gasCostWei;
 
       // 获取用户余额
-      const balance = await window.ethereum.request({
-        method: 'eth_getBalance',
-        params: [txParams.from, 'latest'],
+      const balance = await publicClient.getBalance({
+        address: walletClient.account.address,
       });
 
-      const balanceWei = BigInt(balance);
-
       // 检查余额是否足够
-      if (balanceWei < totalRequired) {
-        setTxStatus(`余额不足: 需要 ${totalRequired.toString()} wei，但只有 ${balanceWei.toString()} wei`);
+      if (balance < totalRequired) {
+        setTxStatus(`余额不足: 需要 ${totalRequired.toString()} wei，但只有 ${balance.toString()} wei`);
         return false;
       }
 
@@ -246,6 +269,11 @@ export default function TestPage() {
       return;
     }
 
+    if (!walletClient || !publicClient || !walletClient.account) {
+      setTxStatus("请先连接钱包");
+      return;
+    }
+
     try {
       setLoading(true);
       setTxStatus("提交订单中...");
@@ -265,7 +293,15 @@ export default function TestPage() {
       const data = await response.json();
 
       if (!data.success) {
-        throw new Error(data.error?.message || "创建订单失败");
+        // 处理API返回的错误
+        const errorMessage = data.error?.message || "创建订单失败";
+
+        // 检查是否是私钥相关错误
+        if (errorMessage.includes("未配置签名私钥") || errorMessage.includes("签名生成失败")) {
+          throw new Error(`服务器配置错误: ${errorMessage}。请联系管理员配置正确的签名私钥。`);
+        }
+
+        throw new Error(errorMessage);
       }
 
       setTxStatus("订单提交成功，准备处理支付交易...");
@@ -284,7 +320,7 @@ export default function TestPage() {
 
         // 先进行ERC20授权
         const approvalSuccess = await handleERC20Approval(
-          tokenAddress,
+          tokenAddress as string,
           amount as bigint,
           transaction.to // 支付合约地址
         );
@@ -297,96 +333,59 @@ export default function TestPage() {
       // 发送交易
       setTxStatus("正在发送支付交易...");
       const txParams: TransactionParams = {
-        from: userAddress,
-        to: transaction.to,
-        data: transaction.data,
+        to: transaction.to as `0x${string}`,
+        data: transaction.data as `0x${string}`,
       };
 
       // 根据支付类型添加value
       if (decodedData.functionName === 'payWithNative') {
         txParams.value = transaction.value;
-      } else {
-        txParams.value = '0x0';
-      }
-
-      // 添加chainId（如果需要）
-      if (transaction.chainId) {
-        txParams.chainId = `0x${Number(transaction.chainId).toString(16)}`;
       }
 
       try {
-        // 估算并添加足够的gas limit
-        setTxStatus("正在估算交易所需的gas...");
+        // 获取链对象
+        const chain = sepolia; // 固定使用Sepolia测试网
 
-        // 如果用户选择使用高gas，则直接使用自定义值
+        // 设置gas限制
+        let gasLimit: bigint;
+
         if (useHighGas) {
-          txParams.gas = '0x' + parseInt(customGasLimit).toString(16);
+          // 直接使用自定义高gas值
+          gasLimit = BigInt(parseInt(customGasLimit));
           setTxStatus(`使用自定义高gas限制: ${customGasLimit} 单位`);
         } else {
-          txParams.gas = await estimateGas(txParams);
-          setTxStatus(`估算gas完成: ${parseInt(txParams.gas as string, 16)} 单位`);
+          // 尝试估算gas，如果失败会返回默认高值
+          setTxStatus("正在估算交易所需的gas...");
+          gasLimit = await estimateGas(txParams);
+          setTxStatus(`估算gas完成: ${gasLimit.toString()} 单位`);
         }
 
         // 检查用户余额是否足够支付交易
-        const balanceCheck = await checkBalance(txParams, txParams.gas);
+        const balanceCheck = await checkBalance(txParams, gasLimit);
         if (!balanceCheck) {
           setLoading(false);
           return;
         }
 
-        // 获取当前gas价格并设置适当的值
-        const gasPrice = await window.ethereum.request({
-          method: 'eth_gasPrice',
-        });
-
-        // 将gas价格提高20%，确保交易能够快速被确认
-        // 对于复杂合约，更高的gas价格可以帮助避免MetaMask的"extra fees"警告
-        const gasPriceNum = BigInt(gasPrice);
-        const adjustedGasPrice = gasPriceNum + (gasPriceNum * BigInt(20) / BigInt(100));
-
-        // 对于EIP-1559兼容的网络，设置maxFeePerGas和maxPriorityFeePerGas
-        // 检查网络是否支持EIP-1559
-        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-        const networkSupportsEIP1559 = [
-          '0x1', // Ethereum Mainnet
-          '0xaa36a7', // Sepolia
-          '0x5', // Goerli
-        ].includes(chainId);
-
-        if (networkSupportsEIP1559) {
-          // 设置EIP-1559参数，使用更高的值以确保交易成功
-          txParams.maxFeePerGas = '0x' + adjustedGasPrice.toString(16);
-          // 提高优先费用以确保矿工优先处理
-          const priorityFee = gasPriceNum / BigInt(2);
-          txParams.maxPriorityFeePerGas = '0x' + priorityFee.toString(16);
-          setTxStatus(`使用EIP-1559 gas参数: maxFeePerGas=${adjustedGasPrice.toString()}, maxPriorityFeePerGas=${priorityFee.toString()}`);
-        } else {
-          // 对于不支持EIP-1559的网络，使用传统的gasPrice
-          txParams.gasPrice = '0x' + adjustedGasPrice.toString(16);
-          setTxStatus(`使用传统gas参数: gasPrice=${adjustedGasPrice.toString()}`);
-        }
-
-        // 添加手动设置的gas选项，让用户可以在MetaMask中调整
-        const manualGasParams = {
-          ...txParams,
-          gas: txParams.gas
-        };
-
         // 发送交易
         setTxStatus("正在发送支付交易...");
-        const txHash = await window.ethereum.request({
-          method: 'eth_sendTransaction',
-          params: [manualGasParams],
+        const txHash = await walletClient.sendTransaction({
+          account: walletClient.account,
+          chain,
+          to: txParams.to,
+          data: txParams.data,
+          value: txParams.value ? BigInt(txParams.value) : undefined,
+          gas: gasLimit,
         });
 
         setTxStatus(`支付交易已发送: ${txHash}`);
 
         // 等待交易确认
         setTxStatus(`等待交易确认中...`);
-        const receipt = await waitForTransaction(txHash);
+        const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
 
         // 检查交易是否成功
-        if (receipt && (receipt as any).status === '0x1') {
+        if (receipt && receipt.status === 'success') {
           setTxStatus(`支付交易已确认并成功: ${txHash}`);
         } else {
           setTxStatus(`支付交易已确认但失败: ${txHash}，请检查交易详情`);
@@ -425,6 +424,19 @@ export default function TestPage() {
             />
           </div>
 
+          <div className="mb-4">
+            <label className="block mb-2">链ID: </label>
+            <input
+              type="text"
+              value={chainId}
+              readOnly
+              className="w-full p-2 border rounded bg-gray-100"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              固定使用Sepolia测试网 (11155111)
+            </p>
+          </div>
+
           <div className="mb-6">
             <label className="block mb-2">用户地址: </label>
             <div className="flex gap-2">
@@ -432,14 +444,15 @@ export default function TestPage() {
                 type="text"
                 value={userAddress}
                 onChange={(e) => setUserAddress(e.target.value)}
-                placeholder="输入用户地址"
+                placeholder="钱包地址将自动填充"
                 className="flex-1 p-2 border rounded"
+                readOnly={true}
               />
               <button
                 onClick={connectWallet}
                 className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
               >
-                连接钱包
+                刷新钱包
               </button>
             </div>
           </div>
@@ -454,30 +467,28 @@ export default function TestPage() {
                 className="mr-2"
               />
               <label htmlFor="useHighGas" className="font-medium">
-                使用自定义Gas限制（解决交易失败问题）
+                使用自定义Gas限制（推荐，解决交易失败问题）
               </label>
             </div>
 
-            {useHighGas && (
-              <div className="ml-6">
-                <label className="block mb-2 text-sm">Gas限制: </label>
-                <input
-                  type="text"
-                  value={customGasLimit}
-                  onChange={(e) => setCustomGasLimit(e.target.value)}
-                  placeholder="输入Gas限制"
-                  className="w-full p-2 border rounded"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  推荐值: 800,000 - 1,000,000（复杂合约可能需要更高的Gas限制）
-                </p>
-              </div>
-            )}
+            <div className="ml-6">
+              <label className="block mb-2 text-sm">Gas限制: </label>
+              <input
+                type="text"
+                value={customGasLimit}
+                onChange={(e) => setCustomGasLimit(e.target.value)}
+                placeholder="输入Gas限制"
+                className="w-full p-2 border rounded"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                推荐值: 800,000 - 1,000,000（复杂合约可能需要更高的Gas限制）
+              </p>
+            </div>
           </div>
 
           <button
             onClick={submitOrder}
-            disabled={loading || !productId || !userAddress}
+            disabled={loading || !productId || !userAddress || !walletClient}
             className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed w-full"
           >
             {loading ? "提交中..." : "提交订单"}

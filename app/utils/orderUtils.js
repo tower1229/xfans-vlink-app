@@ -44,7 +44,7 @@ export function generateOrderId(productId, userAddress) {
 export async function generateOrderSignature(orderData) {
   try {
     // 从环境变量获取私钥
-    const privateKey = process.env.SIGNER_PRIVATE_KEY;
+    const privateKey = process.env.VERIFIER_PRIVATE_KEY;
     if (!privateKey) {
       throw new Error("未配置签名私钥");
     }
