@@ -6,43 +6,29 @@ import { useAuth } from "../hooks/useAuth";
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
-    adminOnly?: boolean;
 }
 
-export default function ProtectedRoute({
-    children,
-    adminOnly = false,
-}: ProtectedRouteProps) {
-    const { user, loading } = useAuth();
+export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     const router = useRouter();
+    const { user, loading } = useAuth();
 
     useEffect(() => {
-        if (!loading) {
-            // 如果用户未登录，重定向到登录页面
-            if (!user) {
-                router.push("/login");
-            }
-            // 如果需要管理员权限但用户不是管理员，重定向到首页
-            else if (adminOnly && user.role !== "admin") {
-                router.push("/");
-            }
+        if (!loading && !user) {
+            router.push("/login");
         }
-    }, [user, loading, router, adminOnly]);
+    }, [user, loading, router]);
 
-    // 如果正在加载，显示加载状态
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
             </div>
         );
     }
 
-    // 如果用户未登录或需要管理员权限但用户不是管理员，不渲染子组件
-    if (!user || (adminOnly && user.role !== "admin")) {
+    if (!user) {
         return null;
     }
 
-    // 渲染子组件
     return <>{children}</>;
 }

@@ -5,10 +5,14 @@ import {
   updateOrderStatus,
   getOrdersByUser,
   updateExpiredOrders,
-  getProductById,
+  getPostById,
   getAllOrders,
 } from "@/utils";
-import { NotFoundError, ValidationError } from "../middleware/errorHandler";
+import {
+  NotFoundError,
+  ValidationError,
+  UnauthorizedError,
+} from "../middleware/errorHandler";
 import {
   isAddress,
   encodeFunctionData,
@@ -18,6 +22,7 @@ import {
   toHex,
 } from "viem";
 import { signMessage } from "viem/accounts";
+import { verifyJwtToken, checkUserExists } from "../../utils/userUtils";
 
 /**
  * 创建订单
@@ -26,21 +31,45 @@ import { signMessage } from "viem/accounts";
  * @returns {Promise<Response>} 响应对象
  */
 export async function createOrderController(request, data) {
-  const { productId, userAddress } = data;
+  // 从令牌中获取用户信息
+  const user = verifyJwtToken(request.token);
+  if (!user) {
+    throw new UnauthorizedError("请先登录");
+  }
+  console.log("JWT用户信息:", user); // 添加日志以查看用户信息结构
+
+  const { productId, chainId } = data;
+  const userAddress = user.walletAddress; // 使用当前用户的钱包地址
+  const userId = user.userId; // JWT中的用户ID字段
 
   // 验证用户地址
   if (!isAddress(userAddress)) {
     throw new ValidationError("无效的用户地址");
   }
 
+  // 检查用户是否存在
+  const userExists = await checkUserExists(userId);
+  if (!userExists) {
+    throw new NotFoundError(`用户ID ${userId} 不存在，请先创建用户账户`);
+  }
+
   // 检查产品是否存在
-  const product = await getProductById(productId);
+  const product = await getPostById(productId);
   if (!product) {
     throw new NotFoundError("产品不存在");
   }
 
+  console.log(
+    `创建订单: 产品ID=${productId}, 用户ID=${userId}, 用户钱包地址=${userAddress}`
+  );
+
   // 创建订单 - 不包含签名
-  const order = await createNewOrder(productId, userAddress, product);
+  const order = await createNewOrder({
+    productId,
+    userId, // userId
+    userAddress, // userAddress
+    chainId,
+  });
 
   // 获取当前时间戳（秒）
   const timestamp = Math.floor(Date.now() / 1000);
@@ -171,10 +200,21 @@ export async function createOrderController(request, data) {
  * @returns {Promise<Response>} 响应对象
  */
 export async function getOrderByIdController(request, orderId) {
+  // 从令牌中获取用户信息
+  const user = verifyJwtToken(request.token);
+
   // 获取订单信息
   const order = await getOrderById(orderId);
   if (!order) {
     throw new NotFoundError("订单不存在");
+  }
+
+  // 检查是否是当前用户的订单
+  if (
+    order.userAddress !== user.walletAddress &&
+    order.ownerAddress !== user.walletAddress
+  ) {
+    throw new UnauthorizedError("您没有权限查看此订单");
   }
 
   // 返回订单信息
@@ -303,12 +343,15 @@ export async function getUserOrdersController(request, userAddress) {
  */
 export async function getAllOrdersController(request) {
   try {
+    // 从令牌中获取用户信息
+    const user = verifyJwtToken(request.token);
+
     // 获取查询参数
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
 
-    // 获取所有订单
-    const orders = await getAllOrders(status);
+    // 获取当前用户的订单
+    const orders = await getOrdersByUser(user.walletAddress, status);
 
     // 格式化订单数据
     const formattedOrders = orders.map((order) => ({

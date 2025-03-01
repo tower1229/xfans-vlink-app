@@ -1,0 +1,83 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL_UNPOOLED")
+}
+
+// 付费内容模型
+model Post {
+  id           String   @id
+  title        String
+  image        String
+  price        BigInt
+  tokenAddress String
+  chainId      Int
+  ownerAddress String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // 关联订单
+  orders Order[]
+
+  @@map("posts")
+}
+
+// 订单模型
+model Order {
+  id        String   @id
+  userId    String
+  postId    String   // 付费内容ID
+  status    String   @default("pending") // pending, completed, failed
+  amount    BigInt
+  txHash    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 关联用户
+  user User @relation(fields: [userId], references: [id])
+
+  // 关联付费内容
+  post Post @relation(fields: [postId], references: [id])
+
+  @@map("orders")
+}
+
+// 用户模型
+model User {
+  id        String   @id
+  username  String   @unique
+  email     String?  @unique
+  password  String
+  address   String?  // 钱包地址
+  role      String   @default("user") // user, admin
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 关联订单
+  orders Order[]
+
+  // 关联刷新令牌
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+// 刷新令牌模型
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  // 关联用户
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}

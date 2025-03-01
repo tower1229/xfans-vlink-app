@@ -6,6 +6,7 @@ import { WalletClient, createPublicClient, http } from "viem";
 import { mainnet, sepolia } from "viem/chains";
 import DashboardLayout from "../dashboard-layout";
 import { getWalletClient } from "@/utils/walletUtils";
+import { fetchWithAuth } from "../utils/api";
 
 // 定义交易参数类型
 interface TransactionParams {
@@ -17,7 +18,7 @@ interface TransactionParams {
 }
 
 export default function TestPage() {
-  const [productId, setProductId] = useState("prod_m7oeu9xk_hf6i");
+  const [productId, setProductId] = useState("c9771efe-49f4-4c50-9858-d74c6d9cb553");
   const [userAddress, setUserAddress] = useState("");
   const [chainId] = useState("11155111"); // 固定为Sepolia测试网
   const [txStatus, setTxStatus] = useState("");
@@ -259,17 +260,12 @@ export default function TestPage() {
 
   // 提交订单
   const submitOrder = async () => {
-    if (!productId || !userAddress) {
+    if (!productId) {
       setTxStatus("请填写产品ID和用户地址");
       return;
     }
 
-    if (!isAddress(userAddress)) {
-      setTxStatus("无效的用户地址格式");
-      return;
-    }
-
-    if (!walletClient || !publicClient || !walletClient.account) {
+    if (!walletClient) {
       setTxStatus("请先连接钱包");
       return;
     }
@@ -279,14 +275,11 @@ export default function TestPage() {
       setTxStatus("提交订单中...");
 
       // 调用创建订单API
-      const response = await fetch("/api/v1/orders", {
+      const response = await fetchWithAuth("/api/v1/orders", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           productId,
-          userAddress,
+          chainId,
         }),
       });
 
@@ -369,6 +362,14 @@ export default function TestPage() {
 
         // 发送交易
         setTxStatus("正在发送支付交易...");
+
+        // 确保 walletClient.account 存在
+        if (!walletClient.account) {
+          setTxStatus("钱包账户未连接或无效");
+          setLoading(false);
+          return;
+        }
+
         const txHash = await walletClient.sendTransaction({
           account: walletClient.account,
           chain,

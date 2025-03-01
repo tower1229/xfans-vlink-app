@@ -17,7 +17,7 @@ import {
  * @param {Request} request 请求对象
  * @returns {Promise<Response>} 响应对象
  */
-export async function GET(request) {
+async function handleGET(request) {
   try {
     // 调用控制器获取当前用户信息
     return await getCurrentUserController(request);
@@ -31,7 +31,7 @@ export async function GET(request) {
  * @param {Request} request 请求对象
  * @returns {Promise<Response>} 响应对象
  */
-export async function PUT(request) {
+async function handlePUT(request) {
   try {
     // 获取请求数据
     const data = await request.json();
@@ -54,7 +54,7 @@ export async function PUT(request) {
  * @param {Request} request 请求对象
  * @returns {Promise<Response>} 响应对象
  */
-export async function DELETE(request) {
+async function handleDELETE(request) {
   try {
     // 调用控制器删除用户
     return await deleteUserController(request);
@@ -63,9 +63,7 @@ export async function DELETE(request) {
   }
 }
 
-// 使用身份验证中间件包装处理函数
-export const handlers = {
-  GET: withAuthAPI(GET),
-  PUT: withAuthAPI(PUT),
-  DELETE: withAuthAPI(DELETE),
-};
+// 使用身份验证中间件包装处理函数并直接导出
+export const GET = withAuthAPI(handleGET);
+export const PUT = withAuthAPI(handlePUT);
+export const DELETE = withAuthAPI(handleDELETE);

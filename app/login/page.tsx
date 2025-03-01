@@ -1,19 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../hooks/useAuth";
 
 export default function Login() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { user, login, loading: authLoading } = useAuth();
   const [formData, setFormData] = useState({
     username: "",
     password: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // 如果用户已登录，直接重定向到仪表板
+  useEffect(() => {
+    if (user && !authLoading) {
+      router.push("/dashboard");
+    }
+  }, [user, authLoading, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -40,8 +47,8 @@ export default function Login() {
       const success = await login(formData.username, formData.password);
 
       if (success) {
-        // 登录成功，跳转到首页
-        router.push("/");
+        // 登录成功，跳转到仪表板页面
+        router.push("/dashboard");
       } else {
         setError("登录失败，请检查用户名和密码");
       }
@@ -51,6 +58,15 @@ export default function Login() {
       setLoading(false);
     }
   };
+
+  // 如果认证状态正在加载，显示加载指示器
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -114,6 +130,15 @@ export default function Login() {
             {loading ? "登录中..." : "登录"}
           </button>
         </form>
+
+        <div className="mt-6 text-center">
+          <p className="text-gray-600">
+            还没有账户？{" "}
+            <Link href="/signup" className="text-blue-600 hover:text-blue-800">
+              立即注册
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

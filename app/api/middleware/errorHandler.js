@@ -48,41 +48,77 @@ export async function withErrorHandler(request, next) {
 }
 
 /**
- * 自定义错误类：验证错误
+ * 自定义错误基类
  */
-export class ValidationError extends Error {
-  constructor(message) {
+class AppError extends Error {
+  constructor(message, statusCode, errorCode) {
     super(message);
-    this.name = "ValidationError";
+    this.statusCode = statusCode;
+    this.errorCode = errorCode;
+    this.name = this.constructor.name;
+    Error.captureStackTrace(this, this.constructor);
   }
 }
 
 /**
- * 自定义错误类：资源不存在错误
+ * 验证错误
  */
-export class NotFoundError extends Error {
+export class ValidationError extends AppError {
   constructor(message) {
-    super(message);
-    this.name = "NotFoundError";
+    super(message, 400, "VALIDATION_ERROR");
   }
 }
 
 /**
- * 自定义错误类：未授权错误
+ * 未找到资源错误
  */
-export class UnauthorizedError extends Error {
+export class NotFoundError extends AppError {
   constructor(message) {
-    super(message);
-    this.name = "UnauthorizedError";
+    super(message, 404, "NOT_FOUND");
   }
 }
 
 /**
- * 自定义错误类：禁止访问错误
+ * 未授权错误
  */
-export class ForbiddenError extends Error {
+export class UnauthorizedError extends AppError {
   constructor(message) {
-    super(message);
-    this.name = "ForbiddenError";
+    super(message, 401, "UNAUTHORIZED");
   }
 }
+
+/**
+ * 禁止访问错误
+ */
+export class ForbiddenError extends AppError {
+  constructor(message) {
+    super(message, 403, "FORBIDDEN");
+  }
+}
+
+/**
+ * 冲突错误
+ */
+export class ConflictError extends AppError {
+  constructor(message) {
+    super(message, 409, "CONFLICT");
+  }
+}
+
+/**
+ * 服务器错误
+ */
+export class ServerError extends AppError {
+  constructor(message) {
+    super(message, 500, "SERVER_ERROR");
+  }
+}
+
+export default {
+  ValidationError,
+  NotFoundError,
+  UnauthorizedError,
+  ForbiddenError,
+  ConflictError,
+  ServerError,
+};

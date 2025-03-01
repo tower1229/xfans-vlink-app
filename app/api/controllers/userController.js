@@ -10,6 +10,7 @@ import {
   deleteRefreshToken,
   updateUser,
   deleteUser,
+  verifyJwtToken,
 } from "@/utils";
 import {
   NotFoundError,
@@ -106,36 +107,76 @@ export async function loginController(request, data) {
 }
 
 /**
- * 刷新令牌
+ * 刷新访问令牌
  * @param {Request} request 请求对象
- * @param {Object} data 刷新令牌数据
+ * @param {Object} data 请求数据
  * @returns {Promise<Response>} 响应对象
  */
 export async function refreshTokenController(request, data) {
-  const { refreshToken } = data;
+  try {
+    const { refreshToken } = data;
 
-  // 验证刷新令牌
-  const user = await verifyRefreshToken(refreshToken);
-  if (!user) {
-    throw new UnauthorizedError("无效的刷新令牌");
+    if (!refreshToken) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "REFRESH_TOKEN_REQUIRED",
+            message: "刷新令牌是必需的",
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    // 验证刷新令牌
+    const user = await verifyRefreshToken(refreshToken);
+
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "INVALID_REFRESH_TOKEN",
+            message: "无效或过期的刷新令牌",
+          },
+        },
+        { status: 401 }
+      );
+    }
+
+    // 删除旧的刷新令牌
+    await deleteRefreshToken(refreshToken);
+
+    // 生成新的令牌
+    const { accessToken, refreshToken: newRefreshToken } = generateTokens(user);
+
+    // 保存新的刷新令牌
+    await saveRefreshToken(user.id, newRefreshToken);
+
+    // 返回新的令牌
+    return NextResponse.json({
+      success: true,
+      data: {
+        tokens: {
+          accessToken,
+          refreshToken: newRefreshToken,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("刷新令牌失败:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: {
+          code: "REFRESH_TOKEN_FAILED",
+          message: "刷新令牌失败",
+        },
+      },
+      { status: 500 }
+    );
   }
-
-  // 删除旧的刷新令牌
-  await deleteRefreshToken(refreshToken);
-
-  // 生成新的令牌
-  const tokens = generateTokens(user);
-
-  // 保存新的刷新令牌
-  await saveRefreshToken(user.id, tokens.refreshToken);
-
-  // 返回新的令牌
-  return NextResponse.json({
-    success: true,
-    data: {
-      tokens,
-    },
-  });
 }
 
 /**
@@ -160,31 +201,57 @@ export async function logoutController(request, data) {
 }
 
 /**
- * 获取当前用户信息
+ * 获取当前用户信息控制器
  * @param {Request} request 请求对象
  * @returns {Promise<Response>} 响应对象
  */
 export async function getCurrentUserController(request) {
-  // 从请求中获取用户信息
-  const user = request.user;
+  try {
+    console.log("getCurrentUserController开始处理请求");
 
-  // 获取完整的用户信息
-  const userInfo = await getUserById(user.userId);
-  if (!userInfo) {
-    throw new NotFoundError("用户不存在");
+    // 从令牌中获取用户信息
+    const user = verifyJwtToken(request.token);
+    console.log("从令牌中获取的用户信息:", user);
+
+    // 检查用户对象是否存在
+    if (!user || !user.userId) {
+      console.log("用户对象不存在或userId不存在");
+      throw new UnauthorizedError("无效的用户信息");
+    }
+
+    // 获取完整的用户信息
+    console.log("尝试获取用户ID为", user.userId, "的完整用户信息");
+    const userInfo = await getUserById(user.userId);
+    if (!userInfo) {
+      console.log("未找到用户信息");
+      throw new NotFoundError("用户不存在");
+    }
+    console.log("获取到的用户信息:", userInfo);
+
+    // 返回用户信息
+    const response = {
+      success: true,
+      data: {
+        id: userInfo.id,
+        username: userInfo.username,
+        email: userInfo.email,
+        walletAddress: userInfo.wallet_address,
+        role: userInfo.role,
+        createdAt: userInfo.created_at,
+        updatedAt: userInfo.updated_at,
+      },
+    };
+    console.log("返回的响应:", response);
+    return NextResponse.json(response);
+  } catch (error) {
+    console.error(
+      "获取当前用户信息失败:",
+      error.name,
+      error.message,
+      error.stack
+    );
+    throw error;
   }
-
-  // 返回用户信息
-  return NextResponse.json({
-    success: true,
-    data: {
-      id: userInfo.id,
-      username: userInfo.username,
-      email: userInfo.email,
-      walletAddress: userInfo.wallet_address,
-      role: userInfo.role,
-    },
-  });
 }
 
 /**
@@ -194,8 +261,8 @@ export async function getCurrentUserController(request) {
  * @returns {Promise<Response>} 响应对象
  */
 export async function updateUserController(request, data) {
-  // 从请求中获取用户信息
-  const user = request.user;
+  // 从令牌中获取用户信息
+  const user = verifyJwtToken(request.token);
 
   // 更新用户信息
   const updatedUser = await updateUser(user.userId, data);
@@ -219,8 +286,8 @@ export async function updateUserController(request, data) {
  * @returns {Promise<Response>} 响应对象
  */
 export async function deleteUserController(request) {
-  // 从请求中获取用户信息
-  const user = request.user;
+  // 从令牌中获取用户信息
+  const user = verifyJwtToken(request.token);
 
   // 删除用户
   const isDeleted = await deleteUser(user.userId);

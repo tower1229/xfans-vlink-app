@@ -10,7 +10,7 @@ const ethereumAddress = () =>
 // 创建订单验证模式
 export const createOrderSchema = z.object({
   productId: z.string().min(1, "产品ID不能为空"),
-  userAddress: ethereumAddress(),
+  chainId: z.string().min(1, "链ID不能为空"),
 });
 
 // 更新订单状态验证模式

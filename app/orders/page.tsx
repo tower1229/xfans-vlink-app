@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import DashboardLayout from "../dashboard-layout";
 import { useRouter } from "next/navigation";
+import { fetchWithAuth } from "../utils/api";
 
 // Define the Order type
 interface Order {
@@ -35,7 +36,7 @@ export default function Orders() {
           ? '/api/v1/orders'
           : `/api/v1/orders?status=${activeTab}`;
 
-        const response = await fetch(url);
+        const response = await fetchWithAuth(url);
 
         if (!response.ok) {
           throw new Error(`Error fetching orders: ${response.status}`);
@@ -118,11 +119,8 @@ export default function Orders() {
 
       const payload = { status: "closed" };
 
-      const response = await fetch(`/api/v1/orders/${orderId}/status`, {
+      const response = await fetchWithAuth(`/api/v1/orders/${orderId}/status`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(payload),
       });
 

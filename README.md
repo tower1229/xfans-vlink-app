@@ -127,3 +127,53 @@ https://your-vercel-domain.vercel.app/api/init-db
 - 无需管理基础设施
 - 与 Vercel 无缝集成
 - 支持 PostgreSQL 的所有功能
+
+# XFans VLink App
+
+## Authentication Implementation
+
+### Backend Authentication
+
+The backend API routes have been secured with JWT token verification. The `verifyJwtToken` middleware is used to protect routes that require authentication.
+
+### Frontend Authentication
+
+The frontend has been updated to include authentication tokens in API requests. This is implemented through:
+
+1. **API Utility Functions**:
+
+   - `getAuthHeaders()`: Returns headers with the Authorization token if available
+   - `fetchWithAuth()`: A wrapper around the fetch API that includes authentication headers
+
+2. **Updated Components**:
+
+   - All API calls in the following components have been updated to use the `fetchWithAuth` utility:
+     - Posts page (`app/posts/page.tsx`)
+     - Orders page (`app/orders/page.tsx`)
+     - Order details page (`app/orders/[orderId]/page.tsx`)
+     - Test page (`app/test/page.tsx`)
+     - Payment Button component (`app/components/PaymentButton.jsx`)
+
+3. **Authentication Hook**:
+   - The `useAuth` hook (`app/hooks/useAuth.tsx`) manages authentication state and tokens
+   - It provides login, logout, and token refresh functionality
+   - The hook already includes proper Authorization headers in its API requests
+
+## Usage
+
+To make authenticated API requests in new components, import and use the `fetchWithAuth` utility:
+
+```typescript
+import { fetchWithAuth } from "../utils/api";
+
+// Example GET request
+const response = await fetchWithAuth("/api/v1/protected-endpoint");
+
+// Example POST request
+const response = await fetchWithAuth("/api/v1/protected-endpoint", {
+  method: "POST",
+  body: JSON.stringify(data),
+});
+```
+
+The utility automatically includes the Authorization header with the JWT token if the user is logged in.

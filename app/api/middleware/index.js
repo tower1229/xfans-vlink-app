@@ -6,6 +6,9 @@ export * from "./validation";
 export * from "./logger";
 export * from "./eventListenerAuth";
 
+// 导入服务器初始化模块
+import "@/lib/serverInit";
+
 // 组合中间件
 import { withAuth, withOptionalAuth, withAdminAuth } from "./auth";
 import { withErrorHandler } from "./errorHandler";
