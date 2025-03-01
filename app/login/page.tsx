@@ -3,14 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "../hooks/useAuth";
 
 export default function Login() {
   const router = useRouter();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     username: "",
     password: "",
   });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -20,18 +23,33 @@ export default function Login() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
-    // Simple validation
+    // 简单验证
     if (!formData.username || !formData.password) {
-      setError("Please enter both username and password");
+      setError("请输入用户名和密码");
+      setLoading(false);
       return;
     }
 
-    // For demo purposes, just redirect to dashboard
-    // In a real app, you would authenticate with an API
-    router.push("/");
+    try {
+      // 调用登录API
+      const success = await login(formData.username, formData.password);
+
+      if (success) {
+        // 登录成功，跳转到首页
+        router.push("/");
+      } else {
+        setError("登录失败，请检查用户名和密码");
+      }
+    } catch (err: any) {
+      setError(err.message || "登录时发生错误");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -39,7 +57,7 @@ export default function Login() {
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">XFans Admin</h1>
-          <p className="text-gray-600 mt-2">Sign in to your account</p>
+          <p className="text-gray-600 mt-2">登录您的账户</p>
         </div>
 
         {error && (
@@ -54,7 +72,7 @@ export default function Login() {
               htmlFor="username"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Username
+              用户名
             </label>
             <input
               id="username"
@@ -63,7 +81,8 @@ export default function Login() {
               value={formData.username}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter your username"
+              placeholder="输入您的用户名"
+              disabled={loading}
             />
           </div>
 
@@ -72,7 +91,7 @@ export default function Login() {
               htmlFor="password"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Password
+              密码
             </label>
             <input
               id="password"
@@ -81,15 +100,18 @@ export default function Login() {
               value={formData.password}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter your password"
+              placeholder="输入您的密码"
+              disabled={loading}
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className={`w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${loading ? "opacity-70 cursor-not-allowed" : ""
+              }`}
+            disabled={loading}
           >
-            Sign In
+            {loading ? "登录中..." : "登录"}
           </button>
         </form>
       </div>

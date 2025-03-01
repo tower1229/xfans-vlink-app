@@ -22,7 +22,7 @@ export default function TestPage() {
   const [chainId] = useState("11155111"); // 固定为Sepolia测试网
   const [txStatus, setTxStatus] = useState("");
   const [loading, setLoading] = useState(false);
-  const [useHighGas, setUseHighGas] = useState(true); // 默认启用高gas
+  const [useHighGas, setUseHighGas] = useState(false); // 启用高gas
   const [customGasLimit, setCustomGasLimit] = useState("10000000"); // 默认较高的gas limit
   const [walletClient, setWalletClient] = useState<WalletClient | null>(null);
   const [publicClient, setPublicClient] = useState<any>(null);
@@ -201,11 +201,11 @@ export default function TestPage() {
         // 调用estimateGas方法
         const gasEstimate = await publicClient.estimateGas(estimateParams);
 
-        // 将估算结果增加50%作为安全边际，因为这个合约操作复杂
-        const gasWithBuffer = gasEstimate * BigInt(15) / BigInt(10);
+        // 将估算结果增加100%作为安全边际，因为这个合约操作复杂
+        const gasWithBuffer = gasEstimate * BigInt(2);
 
         // 确保gas不低于一个最小值
-        const minGas = BigInt(500000); // 为复杂合约设置较高的最小值
+        const minGas = BigInt(150000); // 为复杂合约设置较高的最小值
         const finalGas = gasWithBuffer > minGas ? gasWithBuffer : minGas;
 
         console.log(`Gas估算: 原始=${gasEstimate}, 带缓冲=${gasWithBuffer}, 最终=${finalGas}`);

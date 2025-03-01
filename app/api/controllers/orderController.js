@@ -211,20 +211,37 @@ export async function updateOrderStatusController(request, orderId, data) {
     throw new NotFoundError("订单不存在");
   }
 
-  const { status } = data;
+  const { status, transactionHash } = data;
 
-  // 验证状态 - 只允许更新为closed状态
-  if (status !== "closed") {
-    throw new ValidationError("订单只能被更新为已关闭(closed)状态");
+  // 验证状态 - 允许更新为 closed 或 completed 状态
+  if (status !== "closed" && status !== "completed") {
+    throw new ValidationError(
+      "订单只能被更新为已关闭(closed)或已完成(completed)状态"
+    );
   }
 
-  // 验证当前订单状态 - 只有pending状态的订单可以被关闭
-  if (order.status !== "pending") {
+  // 验证当前订单状态
+  if (status === "closed" && order.status !== "pending") {
     throw new ValidationError("只有待支付(pending)状态的订单可以被关闭");
   }
 
-  // 更新订单状态
-  const updatedOrder = await updateOrderStatus(orderId, status);
+  if (status === "completed" && order.status !== "pending") {
+    throw new ValidationError(
+      "只有待支付(pending)状态的订单可以被标记为已完成"
+    );
+  }
+
+  // 如果是完成状态，需要提供交易哈希
+  if (status === "completed" && !transactionHash) {
+    throw new ValidationError("更新为已完成状态时必须提供交易哈希");
+  }
+
+  // 更新订单状态和交易哈希（如果有）
+  const updatedOrder = await updateOrderStatus(
+    orderId,
+    status,
+    transactionHash
+  );
 
   // 返回更新后的订单
   return NextResponse.json({

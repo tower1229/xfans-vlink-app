@@ -129,3 +129,82 @@ function formatZodErrors(error) {
     return acc;
   }, {});
 }
+
+/**
+ * 验证数据
+ * @param {Object} data 要验证的数据
+ * @param {Object} schema 验证模式
+ * @returns {Object} 验证结果
+ */
+export function validateData(data, schema) {
+  const result = schema.safeParse(data);
+  if (!result.success) {
+    return {
+      success: false,
+      errors: formatZodErrors(result.error),
+    };
+  }
+  return {
+    success: true,
+    data: result.data,
+  };
+}
+
+/**
+ * 创建验证错误响应
+ * @param {Object} errors 错误对象
+ * @returns {Response} 响应对象
+ */
+export function createValidationErrorResponse(errors) {
+  return NextResponse.json(
+    {
+      success: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "请求数据验证失败",
+        details: errors,
+      },
+    },
+    { status: 400 }
+  );
+}
+
+/**
+ * 创建服务器错误响应
+ * @param {Error} error 错误对象
+ * @returns {Response} 响应对象
+ */
+export function createServerErrorResponse(error) {
+  console.error("服务器错误:", error);
+
+  // 确定错误代码和状态码
+  let errorCode = "INTERNAL_SERVER_ERROR";
+  let statusCode = 500;
+  let message = error.message || "服务器内部错误";
+
+  // 根据错误类型设置不同的错误代码和状态码
+  if (error.name === "ValidationError") {
+    errorCode = "VALIDATION_ERROR";
+    statusCode = 400;
+  } else if (error.name === "NotFoundError") {
+    errorCode = "NOT_FOUND";
+    statusCode = 404;
+  } else if (error.name === "UnauthorizedError") {
+    errorCode = "UNAUTHORIZED";
+    statusCode = 401;
+  } else if (error.name === "ForbiddenError") {
+    errorCode = "FORBIDDEN";
+    statusCode = 403;
+  }
+
+  return NextResponse.json(
+    {
+      success: false,
+      error: {
+        code: errorCode,
+        message: message,
+      },
+    },
+    { status: statusCode }
+  );
+}

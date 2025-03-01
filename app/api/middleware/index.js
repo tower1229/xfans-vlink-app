@@ -1,13 +1,16 @@
 // 导出所有中间件
+import { NextResponse } from "next/server";
 export * from "./auth";
 export * from "./errorHandler";
 export * from "./validation";
 export * from "./logger";
+export * from "./eventListenerAuth";
 
 // 组合中间件
-import { withAuth, withOptionalAuth } from "./auth";
+import { withAuth, withOptionalAuth, withAdminAuth } from "./auth";
 import { withErrorHandler } from "./errorHandler";
 import { withLogger } from "./logger";
+import { verifyEventListenerRequest } from "./eventListenerAuth";
 
 /**
  * 组合多个中间件
@@ -56,8 +59,69 @@ export function withAuthAPI(handler) {
 }
 
 /**
+ * 需要管理员权限的API中间件
+ */
+export function withAdminAPI(handler) {
+  return compose(withErrorHandler, withLogger, withAdminAuth)(handler);
+}
+
+/**
  * 可选身份验证的API中间件
  */
 export function withOptionalAuthAPI(handler) {
   return compose(withErrorHandler, withLogger, withOptionalAuth)(handler);
+}
+
+/**
+ * 事件监听器API中间件
+ */
+export function withEventListenerAuth(handler) {
+  return async (request, ...args) => {
+    // 验证事件监听器请求
+    const authResult = verifyEventListenerRequest(request);
+    if (authResult) {
+      return authResult; // 返回错误响应
+    }
+
+    // 验证通过，继续处理请求
+    return await handler(request, ...args);
+  };
+}
+
+/**
+ * 事件监听器API中间件（包含错误处理和日志记录）
+ */
+export function withEventListenerAPI(handler) {
+  return async (request, ...args) => {
+    try {
+      // 使用compose组合中间件
+      const wrappedHandler = compose(
+        withErrorHandler,
+        withLogger,
+        withEventListenerAuth
+      )(handler);
+      // 确保返回响应
+      const response = await wrappedHandler(request, ...args);
+      if (!response) {
+        console.error("Handler did not return a response");
+        return new NextResponse(
+          JSON.stringify({ success: false, error: "Internal server error" }),
+          { status: 500, headers: { "Content-Type": "application/json" } }
+        );
+      }
+      return response;
+    } catch (error) {
+      console.error("Middleware error:", error);
+      return new NextResponse(
+        JSON.stringify({
+          success: false,
+          error: {
+            code: "INTERNAL_SERVER_ERROR",
+            message: error.message || "Internal server error",
+          },
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  };
 }

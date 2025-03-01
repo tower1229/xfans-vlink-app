@@ -15,9 +15,9 @@ export const createOrderSchema = z.object({
 
 // 更新订单状态验证模式
 export const updateOrderStatusSchema = z.object({
-  status: z.enum(["closed"], {
+  status: z.enum(["closed", "completed"], {
     errorMap: () => ({
-      message: "订单只能被更新为已关闭(closed)状态",
+      message: "订单只能被更新为已关闭(closed)或已完成(completed)状态",
     }),
   }),
   transactionHash: z.string().optional(),

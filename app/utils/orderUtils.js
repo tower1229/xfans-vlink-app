@@ -143,33 +143,39 @@ export async function getOrderById(orderId) {
  * 更新订单状态
  * @param {string} orderId 订单ID
  * @param {string} status 新状态
- * @param {Object} additionalData 额外数据
+ * @param {string} transactionHash 交易哈希（可选）
  * @returns {Promise<Object>} 更新后的订单
  */
-export async function updateOrderStatus(orderId, status, additionalData = {}) {
+export async function updateOrderStatus(
+  orderId,
+  status,
+  transactionHash = null
+) {
   try {
-    // 构建动态更新字段
-    const updateFields = [];
-    const values = [status, orderId];
-    let updateQuery = "UPDATE orders SET status = $1";
-    let paramIndex = 2;
+    let query;
+    let params;
 
-    // 处理额外数据
-    Object.entries(additionalData).forEach(([key, value]) => {
-      // 转换驼峰命名为下划线命名
-      const dbField = key.replace(/([A-Z])/g, "_$1").toLowerCase();
-      updateFields.push(`${dbField} = $${paramIndex + 1}`);
-      values.splice(paramIndex, 0, value);
-      paramIndex++;
-    });
-
-    if (updateFields.length > 0) {
-      updateQuery += ", " + updateFields.join(", ");
+    if (transactionHash) {
+      // 如果提供了交易哈希，同时更新状态和交易哈希
+      query = `
+        UPDATE orders
+        SET status = $1, transaction_hash = $2
+        WHERE id = $3
+        RETURNING *
+      `;
+      params = [status, transactionHash, orderId];
+    } else {
+      // 只更新状态
+      query = `
+        UPDATE orders
+        SET status = $1
+        WHERE id = $2
+        RETURNING *
+      `;
+      params = [status, orderId];
     }
 
-    updateQuery += " WHERE id = $2 RETURNING *";
-
-    const rows = await executeQuery(updateQuery, values);
+    const rows = await executeQuery(query, params);
     return formatOrderFromDb(rows[0]);
   } catch (error) {
     console.error(`更新订单 ${orderId} 状态失败:`, error);

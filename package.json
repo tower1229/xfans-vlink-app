@@ -3,15 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "event-listener": "node scripts/eventListener.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
     "axios": "^1.8.0",
+    "bcryptjs": "^3.0.2",
+    "crypto": "^1.0.1",
+    "jsonwebtoken": "^9.0.2",
     "next": "15.1.7",
+    "node-fetch": "^3.3.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "viem": "^2.23.5",
@@ -22,6 +27,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^16.4.7",
     "eslint": "^9",
     "eslint-config-next": "15.1.7",
     "postcss": "^8",

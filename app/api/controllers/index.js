@@ -18,3 +18,14 @@ export {
 
 // 导出数据库控制器
 export { initDatabaseController } from "./dbController";
+
+// 导出用户控制器
+export {
+  registerController,
+  loginController,
+  refreshTokenController,
+  logoutController,
+  getCurrentUserController,
+  updateUserController,
+  deleteUserController,
+} from "./userController";
