@@ -48,7 +48,7 @@ function ensureHex(value: string): `0x${string}` {
 
 export default function TestPage() {
   const [productId, setProductId] = useState(
-    "c9771efe-49f4-4c50-9858-d74c6d9cb553"
+    "a252f77e-2bbb-4d42-93f1-f6c20c5edc7f"
   );
   const [userAddress, setUserAddress] = useState("");
   const [chainId] = useState("11155111"); // 固定为Sepolia测试网
@@ -502,8 +502,7 @@ export default function TestPage() {
         });
 
         setTxStatus(
-          `交易已确认，区块: ${receipt.blockNumber}, 状态: ${
-            receipt.status === "success" ? "成功" : "失败"
+          `交易已确认，区块: ${receipt.blockNumber}, 状态: ${receipt.status === "success" ? "成功" : "失败"
           }`
         );
 

@@ -72,12 +72,34 @@ export default function Posts() {
     // 创建付费内容
     const handleCreate = async () => {
         try {
+            console.log('准备创建付费内容，表单数据:', formData);
+
+            // 验证必填字段
+            if (!formData.title || !formData.image || !formData.price || !formData.tokenAddress || !formData.chainId) {
+                setError('请填写所有必填字段');
+                return;
+            }
+
+            // 验证chainId是否为数字
+            const chainId = Number(formData.chainId);
+            if (isNaN(chainId) || chainId <= 0) {
+                setError('链ID必须是有效的正整数');
+                return;
+            }
+
             const response = await fetchWithAuth("/api/v1/posts", {
                 method: "POST",
-                body: JSON.stringify(formData),
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    ...formData,
+                    chainId: chainId
+                }),
             });
 
             const data = await response.json();
+            console.log('创建付费内容响应:', data);
 
             if (!data.success) {
                 throw new Error(data.error?.message || "创建付费内容失败");
@@ -90,8 +112,8 @@ export default function Posts() {
             setShowCreateModal(false);
             resetForm();
         } catch (err: any) {
-            setError(err.message);
             console.error("创建付费内容失败:", err);
+            setError(err.message || "创建付费内容失败，请检查输入数据是否正确");
         }
     };
 
