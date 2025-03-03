@@ -80,6 +80,12 @@ export async function verifySignature(requestData, timestamp, signature) {
       return false;
     }
 
+    // 检查签名是否为null或空
+    if (!signature) {
+      console.error("签名为空或null");
+      return false;
+    }
+
     // 重新计算签名
     const payload = JSON.stringify(requestData) + timestamp;
     const expectedSignature = crypto

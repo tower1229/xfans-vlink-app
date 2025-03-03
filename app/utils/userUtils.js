@@ -397,6 +397,12 @@ export function verifyJwtToken(token) {
     console.log("使用的JWT密钥:", JWT_SECRET);
     const decoded = jwt.verify(token, JWT_SECRET);
     console.log("JWT令牌验证成功:", decoded);
+
+    // 确保返回的用户信息包含walletAddress字段
+    if (decoded && decoded.address && !decoded.walletAddress) {
+      decoded.walletAddress = decoded.address;
+    }
+
     return decoded;
   } catch (error) {
     console.error("验证JWT令牌失败:", error.name, error.message);

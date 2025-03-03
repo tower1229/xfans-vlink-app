@@ -10,7 +10,7 @@ import { dirname } from "path";
 config();
 
 // 支付合约地址
-const PAYMENT_CONTRACT_ADDRESS = process.env.PAYMENT_CONTRACT_ADDRESS;
+const NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS;
 
 // API密钥和密钥 - 应该在.env文件中配置
 const API_KEY = process.env.EVENT_LISTENER_API_KEY;
@@ -26,7 +26,7 @@ if (!API_KEY || !API_SECRET) {
   process.exit(1);
 }
 
-if (!PAYMENT_CONTRACT_ADDRESS) {
+if (!NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS) {
   console.error(
     "错误: 未配置支付合约地址。请在.env文件中设置PAYMENT_CONTRACT_ADDRESS"
   );
@@ -113,13 +113,13 @@ async function updateOrderStatus(orderId, txHash) {
 
 // 开始监听合约事件
 async function startEventListener() {
-  console.log(`开始监听支付合约事件，合约地址: ${PAYMENT_CONTRACT_ADDRESS}`);
+  console.log(`开始监听支付合约事件，合约地址: ${NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS}`);
   console.log(`使用 RPC URL: ${RPC_URL}`);
 
   try {
     // 使用 viem 的 watchContractEvent 方法监听事件
     const unwatch = publicClient.watchContractEvent({
-      address: PAYMENT_CONTRACT_ADDRESS,
+      address: NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS,
       abi: [paymentCompletedEventAbi], // 使用数组包装 ABI
       eventName: "PaymentCompleted", // 使用事件名称
       onLogs: (logs) => {

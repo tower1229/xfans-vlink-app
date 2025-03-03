@@ -59,6 +59,143 @@ export async function createOrderController(request, data) {
     throw new NotFoundError("产品不存在");
   }
 
+  // 检查用户是否已有该商品的待支付订单
+  console.log(`检查用户是否已有商品 ${productId} 的待支付订单`);
+  const existingOrders = await getOrdersByUser(userAddress, "pending");
+  const existingOrder = existingOrders.find(
+    (order) => order.productId === productId
+  );
+
+  if (existingOrder) {
+    console.log(`用户已有商品 ${productId} 的待支付订单: ${existingOrder.id}`);
+
+    // 返回已存在的订单信息
+    // 获取当前时间戳（秒）
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    // 按照指定格式编码orderData
+    const encodedOrderData = encodeAbiParameters(
+      parseAbiParameters("bytes32, uint256, address, address, uint32, uint64"),
+      [
+        existingOrder.id, // orderId (bytes32)
+        BigInt(existingOrder.price.toString()), // amount (uint256)
+        existingOrder.tokenAddress, // token (address)
+        existingOrder.ownerAddress, // sellerAddress (address)
+        timestamp, // timestamp (uint32)
+        BigInt(existingOrder.chainId), // chainId (uint64)
+      ]
+    );
+
+    // 计算消息哈希
+    const messageHash = keccak256(encodedOrderData);
+
+    // 签名消息
+    let signature;
+    try {
+      const privateKey = process.env.VERIFIER_PRIVATE_KEY;
+
+      // 检查私钥是否存在且不为空
+      if (!privateKey || privateKey.trim() === "") {
+        throw new Error(
+          "未配置签名私钥，无法创建订单。请在环境变量中设置VERIFIER_PRIVATE_KEY"
+        );
+      }
+
+      // 格式化私钥，确保有0x前缀
+      const formattedPrivateKey = privateKey.startsWith("0x")
+        ? privateKey
+        : `0x${privateKey}`;
+
+      // 使用 messageHash 作为普通消息签名，viem 会自动添加前缀
+      signature = await signMessage({
+        message: { raw: messageHash }, // 使用 messageHash 作为原始字节数据
+        privateKey: formattedPrivateKey,
+      });
+    } catch (error) {
+      console.error("生成订单签名失败:", error.message);
+      throw new ValidationError(`签名生成失败: ${error.message}`);
+    }
+
+    // 定义支付合约地址
+    const NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS =
+      process.env.NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS ||
+      "0x1234567890123456789012345678901234567890";
+
+    // 构建EVM交易对象
+    let transaction;
+
+    // 根据支付方式构建不同的交易
+    if (
+      existingOrder.tokenAddress ===
+      "0x0000000000000000000000000000000000000000"
+    ) {
+      // ETH支付 - 构建payWithNative交易
+      transaction = {
+        to: NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS, // 合约地址
+        value: existingOrder.price.toString(), // 支付金额
+        data: encodeFunctionData({
+          abi: [
+            {
+              name: "payWithNative",
+              type: "function",
+              stateMutability: "payable",
+              inputs: [
+                { name: "orderData", type: "bytes" },
+                { name: "signature", type: "bytes" },
+              ],
+              outputs: [],
+            },
+          ],
+          functionName: "payWithNative",
+          args: [encodedOrderData, signature],
+        }),
+        chainId: existingOrder.chainId,
+      };
+    } else {
+      // ERC20支付 - 构建payWithERC20交易
+      transaction = {
+        to: NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS, // 合约地址
+        value: "0", // 不发送ETH
+        data: encodeFunctionData({
+          abi: [
+            {
+              name: "payWithERC20",
+              type: "function",
+              stateMutability: "nonpayable",
+              inputs: [
+                { name: "token", type: "address" },
+                { name: "amount", type: "uint256" },
+                { name: "orderData", type: "bytes" },
+                { name: "signature", type: "bytes" },
+              ],
+              outputs: [],
+            },
+          ],
+          functionName: "payWithERC20",
+          args: [
+            existingOrder.tokenAddress,
+            BigInt(existingOrder.price.toString()),
+            encodedOrderData,
+            signature,
+          ],
+        }),
+        chainId: existingOrder.chainId,
+      };
+    }
+
+    // 返回已存在订单的交易参数
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          transaction: transaction,
+          message: "已存在待支付订单，返回该订单的支付信息",
+        },
+      },
+      { status: 200 }
+    );
+  }
+
   console.log(
     `创建订单: 产品ID=${productId}, 用户ID=${userId}, 用户钱包地址=${userAddress}`
   );
@@ -118,8 +255,8 @@ export async function createOrderController(request, data) {
   }
 
   // 定义支付合约地址
-  const PAYMENT_CONTRACT_ADDRESS =
-    process.env.PAYMENT_CONTRACT_ADDRESS ||
+  const NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS =
+    process.env.NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS ||
     "0x1234567890123456789012345678901234567890";
 
   // 构建EVM交易对象
@@ -129,7 +266,7 @@ export async function createOrderController(request, data) {
   if (order.tokenAddress === "0x0000000000000000000000000000000000000000") {
     // ETH支付 - 构建payWithNative交易
     transaction = {
-      to: PAYMENT_CONTRACT_ADDRESS, // 合约地址
+      to: NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS, // 合约地址
       value: order.price.toString(), // 支付金额
       data: encodeFunctionData({
         abi: [
@@ -152,7 +289,7 @@ export async function createOrderController(request, data) {
   } else {
     // ERC20支付 - 构建payWithERC20交易
     transaction = {
-      to: PAYMENT_CONTRACT_ADDRESS, // 合约地址
+      to: NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS, // 合约地址
       value: "0", // 不发送ETH
       data: encodeFunctionData({
         abi: [
@@ -280,7 +417,7 @@ export async function updateOrderStatusController(request, orderId, data) {
   const updatedOrder = await updateOrderStatus(
     orderId,
     status,
-    transactionHash
+    status === "completed" ? transactionHash : null
   );
 
   // 返回更新后的订单
@@ -345,13 +482,22 @@ export async function getAllOrdersController(request) {
   try {
     // 从令牌中获取用户信息
     const user = verifyJwtToken(request.token);
+    console.log("获取订单列表 - 用户信息:", user);
+
+    if (!user || !user.walletAddress) {
+      console.error("获取订单列表 - 用户信息不完整或缺少钱包地址");
+      throw new UnauthorizedError("无效的用户信息");
+    }
 
     // 获取查询参数
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
+    console.log(`获取订单列表 - 查询参数: status=${status || "所有"}`);
 
     // 获取当前用户的订单
+    console.log(`获取订单列表 - 查询用户钱包地址: ${user.walletAddress}`);
     const orders = await getOrdersByUser(user.walletAddress, status);
+    console.log(`获取订单列表 - 找到 ${orders.length} 个订单`);
 
     // 格式化订单数据
     const formattedOrders = orders.map((order) => ({

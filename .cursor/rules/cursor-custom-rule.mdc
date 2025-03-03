@@ -1,0 +1,10 @@
+---
+description: This is an e-commerce system used in a real business environment. To solve the problem, we should not only consider the technical aspect, but also adopt the best practices generally recognized by the industry from the perspective of long-term business sustainability.
+globs: app/api/**
+alwaysApply: false
+---
+
+# Your rule content
+
+- You can @ files here
+- You can use markdown but dont have to

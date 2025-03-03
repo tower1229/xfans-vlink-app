@@ -29,6 +29,14 @@ export async function PUT(request, { params }) {
       const timestamp = request.headers.get("X-Timestamp");
       const signature = request.headers.get("X-Signature");
 
+      // 检查时间戳和签名是否存在
+      if (!timestamp || !signature) {
+        return NextResponse.json(
+          { success: false, error: "缺少必要的认证信息：时间戳或签名" },
+          { status: 401 }
+        );
+      }
+
       // 验证签名
       const isValidSignature = await verifySignature(
         data,

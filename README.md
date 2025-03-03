@@ -10,7 +10,7 @@
 ```
 # 支付配置
 VERIFIER_PRIVATE_KEY=your_private_key_here
-PAYMENT_CONTRACT_ADDRESS=your_payment_contract_address_here
+NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS=your_payment_contract_address_here
 
 # Neon Database 连接信息
 DATABASE_URL=postgres://user:password@endpoint.neon.tech/neondb?sslmode=require
@@ -18,11 +18,11 @@ DATABASE_URL=postgres://user:password@endpoint.neon.tech/neondb?sslmode=require
 
 ### 环境变量说明
 
-| 变量名                   | 描述                   | 是否必需 |
-| ------------------------ | ---------------------- | -------- |
-| VERIFIER_PRIVATE_KEY     | 用于签名订单的私钥     | 是       |
-| PAYMENT_CONTRACT_ADDRESS | 支付合约地址           | 是       |
-| DATABASE_URL             | Neon Database 连接 URL | 是       |
+| 变量名                               | 描述                   | 是否必需 |
+| ------------------------------------ | ---------------------- | -------- |
+| VERIFIER_PRIVATE_KEY                 | 用于签名订单的私钥     | 是       |
+| NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS | 支付合约地址           | 是       |
+| DATABASE_URL                         | Neon Database 连接 URL | 是       |
 
 ### 安全注意事项
 

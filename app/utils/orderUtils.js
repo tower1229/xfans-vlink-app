@@ -181,10 +181,12 @@ export async function updateOrderStatus(orderId, status, txHash = null) {
       updateData.txHash = txHash;
     }
 
-    // 如果状态是已完成，设置完成时间
-    if (status === "completed") {
-      updateData.completedAt = new Date();
-    }
+    // 检查数据库模型中是否存在completedAt字段
+    // 根据错误信息，completedAt字段不在数据库模型中，所以不应该设置它
+    // 如果状态是已完成，可以在这里添加其他需要更新的字段
+    // if (status === "completed") {
+    //   updateData.completedAt = new Date();
+    // }
 
     // 使用Prisma更新订单
     const order = await db.order.update({
@@ -237,21 +239,44 @@ export async function updateExpiredOrders() {
 
 /**
  * 获取用户订单
- * @param {string} userAddress 用户地址
+ * @param {string} userAddress 用户钱包地址
  * @param {string} status 可选的订单状态过滤
  * @returns {Promise<Array>} 订单列表
  */
 export async function getOrdersByUser(userAddress, status = null) {
   try {
+    console.log(
+      `查询用户订单: 钱包地址=${userAddress}, 状态=${status || "所有"}`
+    );
+
+    // 先查询用户ID
+    const user = await db.user.findFirst({
+      where: {
+        address: userAddress,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!user) {
+      console.log(`未找到钱包地址为 ${userAddress} 的用户`);
+      return [];
+    }
+
+    console.log(`找到用户ID: ${user.id}`);
+
     // 构建查询条件
     const whereCondition = {
-      userId: userAddress, // 使用userId而不是userAddress，与数据库模型匹配
+      userId: user.id, // 使用数据库中的用户ID
     };
 
     // 如果提供了状态，添加到查询条件
     if (status) {
       whereCondition.status = status;
     }
+
+    console.log("查询条件:", JSON.stringify(whereCondition));
 
     // 使用Prisma查询用户订单
     const orders = await db.order.findMany({
@@ -265,6 +290,7 @@ export async function getOrdersByUser(userAddress, status = null) {
       },
     });
 
+    console.log(`找到 ${orders.length} 个订单`);
     return orders.map(formatOrderFromDb);
   } catch (error) {
     console.error(`获取用户 ${userAddress} 的订单失败:`, error);
