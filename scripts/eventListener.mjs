@@ -19,6 +19,9 @@ const API_SECRET = process.env.EVENT_LISTENER_API_SECRET;
 // RPC URL - 建议使用可靠的 RPC 提供商
 const RPC_URL = process.env.RPC_URL;
 
+// 用于跟踪已处理的订单
+const processedOrders = new Set();
+
 if (!API_KEY || !API_SECRET) {
   console.error(
     "错误: 未配置API密钥或密钥。请在.env文件中设置EVENT_LISTENER_API_KEY和EVENT_LISTENER_API_SECRET"
@@ -61,6 +64,12 @@ function generateSignature(data, timestamp) {
 // 更新订单状态的函数
 async function updateOrderStatus(orderId, txHash) {
   try {
+    // 检查订单是否已处理过
+    if (processedOrders.has(orderId)) {
+      console.log(`订单 ${orderId} 已经处理过，跳过更新`);
+      return;
+    }
+
     console.log(`正在更新订单 ${orderId} 的状态...`);
 
     // 准备请求数据
@@ -103,6 +112,8 @@ async function updateOrderStatus(orderId, txHash) {
 
     if (data.success) {
       console.log(`订单 ${orderId} 状态已更新为已完成`);
+      // 将订单标记为已处理
+      processedOrders.add(orderId);
     } else {
       console.error(`更新订单状态失败:`, data.error);
     }
