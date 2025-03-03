@@ -34,7 +34,7 @@ export default function Dashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <div className="bg-white p-6 rounded-lg shadow-xs">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-lg font-medium text-gray-700">内容统计</h2>
                             <span className="text-purple-600">
@@ -47,7 +47,7 @@ export default function Dashboard() {
                         <p className="text-sm text-gray-500">已发布的内容</p>
                     </div>
 
-                    <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <div className="bg-white p-6 rounded-lg shadow-xs">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-lg font-medium text-gray-700">粉丝数量</h2>
                             <span className="text-purple-600">
@@ -60,7 +60,7 @@ export default function Dashboard() {
                         <p className="text-sm text-gray-500">关注您的粉丝</p>
                     </div>
 
-                    <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <div className="bg-white p-6 rounded-lg shadow-xs">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-lg font-medium text-gray-700">收入</h2>
                             <span className="text-purple-600">
@@ -74,7 +74,7 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-lg shadow-sm mb-8">
+                <div className="bg-white p-6 rounded-lg shadow-xs mb-8">
                     <h2 className="text-lg font-medium text-gray-700 mb-4">快速操作</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex flex-col items-center justify-center">
@@ -106,7 +106,7 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-lg shadow-sm">
+                <div className="bg-white p-6 rounded-lg shadow-xs">
                     <h2 className="text-lg font-medium text-gray-700 mb-4">钱包信息</h2>
                     <div className="p-4 bg-gray-50 rounded-lg">
                         <div className="flex items-center mb-2">
@@ -115,7 +115,7 @@ export default function Dashboard() {
                             </svg>
                             <span className="text-sm font-medium text-gray-700">钱包地址</span>
                         </div>
-                        <div className="bg-white p-3 rounded border border-gray-200">
+                        <div className="bg-white p-3 rounded-sm border border-gray-200">
                             <p className="text-sm font-mono text-gray-600 break-all">{user.walletAddress || '未设置钱包地址'}</p>
                         </div>
                     </div>

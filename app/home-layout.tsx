@@ -20,13 +20,13 @@ export default function HomeLayout({ children }: HomeLayoutProps) {
     ];
 
     return (
-        <div className="min-h-screen flex flex-col bg-gradient-to-br from-purple-50 to-pink-50">
+        <div className="min-h-screen flex flex-col bg-linear-to-br from-purple-50 to-pink-50">
             {/* 导航栏 */}
-            <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+            <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-xs">
                 <div className="container mx-auto px-4 py-4">
                     <div className="flex justify-between items-center">
                         <div className="flex items-center space-x-2">
-                            <div className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-transparent bg-clip-text">
+                            <div className="text-3xl font-bold bg-linear-to-r from-purple-600 to-pink-600 text-transparent bg-clip-text">
                                 X-Fans
                             </div>
                         </div>
@@ -75,7 +75,7 @@ export default function HomeLayout({ children }: HomeLayoutProps) {
                                     </Link>
                                     <Link
                                         href="/signup"
-                                        className="px-4 py-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-colors"
+                                        className="px-4 py-2 rounded-full bg-linear-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-colors"
                                     >
                                         注册
                                     </Link>
@@ -87,7 +87,7 @@ export default function HomeLayout({ children }: HomeLayoutProps) {
             </header>
 
             {/* 主要内容 */}
-            <main className="flex-grow">
+            <main className="grow">
                 {children}
             </main>
 
@@ -96,7 +96,7 @@ export default function HomeLayout({ children }: HomeLayoutProps) {
                 <div className="container mx-auto px-4">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                         <div>
-                            <h3 className="text-xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text">X-Fans</h3>
+                            <h3 className="text-xl font-bold mb-4 bg-linear-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text">X-Fans</h3>
                             <p className="text-gray-400">
                                 使用Vilink协议接入web3支付的内容创作平台，让创作者与粉丝建立更紧密的联系。
                             </p>

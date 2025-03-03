@@ -78,17 +78,17 @@ export default function Signup() {
     // 如果认证状态正在加载，显示加载指示器
     if (authLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
+            <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-purple-50 to-pink-50">
                 <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-purple-50 to-pink-50 py-12 px-4 sm:px-6 lg:px-8">
             <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-transparent bg-clip-text">X-Fans</h1>
+                    <h1 className="text-3xl font-bold bg-linear-to-r from-purple-600 to-pink-600 text-transparent bg-clip-text">X-Fans</h1>
                     <p className="text-gray-600 mt-2">创建您的账户</p>
                 </div>
 
@@ -112,7 +112,7 @@ export default function Signup() {
                             type="text"
                             value={formData.username}
                             onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-purple-500"
                             placeholder="输入您的用户名"
                             disabled={loading}
                         />
@@ -131,7 +131,7 @@ export default function Signup() {
                             type="text"
                             value={formData.walletAddress}
                             onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-purple-500"
                             placeholder="输入您的以太坊钱包地址（0x开头）"
                             disabled={loading}
                         />
@@ -151,7 +151,7 @@ export default function Signup() {
                             type="password"
                             value={formData.password}
                             onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-purple-500"
                             placeholder="输入您的密码"
                             disabled={loading}
                         />
@@ -170,7 +170,7 @@ export default function Signup() {
                             type="password"
                             value={formData.confirmPassword}
                             onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-purple-500"
                             placeholder="再次输入您的密码"
                             disabled={loading}
                         />
@@ -179,7 +179,7 @@ export default function Signup() {
                     <div>
                         <button
                             type="submit"
-                            className={`w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-2 px-4 rounded-md hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${loading ? "opacity-70 cursor-not-allowed" : ""
+                            className={`w-full bg-linear-to-r from-purple-600 to-pink-600 text-white py-2 px-4 rounded-md hover:from-purple-700 hover:to-pink-700 focus:outline-hidden focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${loading ? "opacity-70 cursor-not-allowed" : ""
                                 }`}
                             disabled={loading}
                         >

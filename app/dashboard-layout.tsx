@@ -63,7 +63,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Sidebar */}
         <div className="w-64 bg-white shadow-md">
           <div className="p-6">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-transparent bg-clip-text">X-Fans</h1>
+            <h1 className="text-2xl font-bold bg-linear-to-r from-purple-600 to-pink-600 text-transparent bg-clip-text">X-Fans</h1>
             {user && (
               <p className="text-sm text-gray-600 mt-2">
                 {user.username} ({user.role})
@@ -103,7 +103,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Main Content */}
         <div className="flex-1 overflow-auto">
-          <header className="bg-white shadow-sm">
+          <header className="bg-white shadow-xs">
             <div className="px-6 py-4 flex justify-between items-center">
               <h2 className="text-xl font-semibold text-gray-800">
                 {navItems.find((item) => item.path === pathname)?.name || "仪表板"}

@@ -198,7 +198,7 @@ export default function Posts() {
                                 name="title"
                                 value={formData.title}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-xs p-2"
                                 placeholder="付费内容标题"
                             />
                         </div>
@@ -211,7 +211,7 @@ export default function Posts() {
                                 name="image"
                                 value={formData.image}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-xs p-2"
                                 placeholder="https://example.com/image.jpg"
                             />
                         </div>
@@ -224,7 +224,7 @@ export default function Posts() {
                                 name="price"
                                 value={formData.price}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-xs p-2"
                                 placeholder="1000000000000000000"
                             />
                         </div>
@@ -237,7 +237,7 @@ export default function Posts() {
                                 name="tokenAddress"
                                 value={formData.tokenAddress}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-xs p-2"
                                 placeholder="0x0000000000000000000000000000000000000000"
                             />
                         </div>
@@ -250,7 +250,7 @@ export default function Posts() {
                                 name="chainId"
                                 value={formData.chainId}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-xs p-2"
                                 placeholder="1"
                             />
                         </div>
@@ -263,7 +263,7 @@ export default function Posts() {
                                 name="ownerAddress"
                                 value={formData.ownerAddress}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-xs p-2"
                                 placeholder="0x0000000000000000000000000000000000000000"
                             />
                         </div>
@@ -306,7 +306,7 @@ export default function Posts() {
                                 name="title"
                                 value={formData.title}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-xs p-2"
                             />
                         </div>
                         <div>
@@ -318,7 +318,7 @@ export default function Posts() {
                                 name="image"
                                 value={formData.image}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-xs p-2"
                             />
                         </div>
                         <div>
@@ -330,7 +330,7 @@ export default function Posts() {
                                 name="price"
                                 value={formData.price}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-xs p-2"
                             />
                         </div>
                         <div>
@@ -342,7 +342,7 @@ export default function Posts() {
                                 name="tokenAddress"
                                 value={formData.tokenAddress}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-xs p-2"
                             />
                         </div>
                         <div>
@@ -354,7 +354,7 @@ export default function Posts() {
                                 name="chainId"
                                 value={formData.chainId}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-xs p-2"
                             />
                         </div>
                         <div>
@@ -366,7 +366,7 @@ export default function Posts() {
                                 name="ownerAddress"
                                 value={formData.ownerAddress}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-xs p-2"
                             />
                         </div>
                     </div>
@@ -406,12 +406,12 @@ export default function Posts() {
                 </div>
 
                 {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-sm mb-4">
                         {error}
                     </div>
                 )}
 
-                <div className="bg-white shadow rounded-lg overflow-hidden">
+                <div className="bg-white shadow-sm rounded-lg overflow-hidden">
                     <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
                         <h2 className="text-lg font-medium text-gray-900">付费内容列表</h2>
                         <p className="text-sm text-gray-500">{posts.length} 个付费内容</p>
@@ -485,7 +485,7 @@ export default function Posts() {
                                                     <img
                                                         src={post.image}
                                                         alt={post.title}
-                                                        className="h-10 w-10 object-cover rounded"
+                                                        className="h-10 w-10 object-cover rounded-sm"
                                                     />
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

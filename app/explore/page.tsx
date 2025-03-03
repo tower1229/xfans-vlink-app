@@ -141,7 +141,7 @@ export default function Explore() {
     return (
         <HomeLayout>
             {/* 页面标题 */}
-            <section className="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-16">
+            <section className="bg-linear-to-r from-purple-600 to-pink-600 text-white py-16">
                 <div className="container mx-auto px-4 text-center">
                     <h1 className="text-4xl font-bold mb-4">探索内容</h1>
                     <p className="text-xl max-w-2xl mx-auto text-white/80">
@@ -203,7 +203,7 @@ export default function Explore() {
                             {filteredContent.map((item) => (
                                 <div
                                     key={item.id}
-                                    className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                                    className="bg-white rounded-xl overflow-hidden shadow-xs hover:shadow-md transition-shadow"
                                 >
                                     <div className="h-48 bg-gray-200 relative">
                                         <div className="absolute inset-0 flex items-center justify-center text-gray-400">
@@ -259,7 +259,7 @@ export default function Explore() {
             </section>
 
             {/* 订阅提示 */}
-            <section className="py-16 bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+            <section className="py-16 bg-linear-to-r from-purple-600 to-pink-600 text-white">
                 <div className="container mx-auto px-4 text-center">
                     <h2 className="text-3xl font-bold mb-6">想要获取更多优质内容？</h2>
                     <p className="text-xl text-white/80 mb-8 max-w-2xl mx-auto">

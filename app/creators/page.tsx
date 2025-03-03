@@ -153,7 +153,7 @@ export default function Creators() {
     return (
         <HomeLayout>
             {/* 页面标题 */}
-            <section className="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-16">
+            <section className="bg-linear-to-r from-purple-600 to-pink-600 text-white py-16">
                 <div className="container mx-auto px-4 text-center">
                     <h1 className="text-4xl font-bold mb-4">创作者</h1>
                     <p className="text-xl max-w-2xl mx-auto text-white/80">
@@ -174,7 +174,7 @@ export default function Creators() {
                                     placeholder="搜索创作者..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-purple-500"
                                 />
                                 <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
                                     <svg
@@ -230,9 +230,9 @@ export default function Creators() {
                             {filteredCreators.map((creator) => (
                                 <div
                                     key={creator.id}
-                                    className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                                    className="bg-white rounded-xl overflow-hidden shadow-xs hover:shadow-md transition-shadow"
                                 >
-                                    <div className="h-32 bg-gradient-to-r from-purple-400 to-pink-400"></div>
+                                    <div className="h-32 bg-linear-to-r from-purple-400 to-pink-400"></div>
                                     <div className="p-6 relative">
                                         <div className="absolute -top-12 left-6 w-20 h-20 rounded-full bg-gray-200 border-4 border-white overflow-hidden">
                                             <div className="w-full h-full flex items-center justify-center text-gray-400">
@@ -281,7 +281,7 @@ export default function Creators() {
                                             </div>
                                             <Link
                                                 href={`/creators/${creator.id}`}
-                                                className="block w-full py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-center rounded-md hover:from-purple-700 hover:to-pink-700 transition-colors"
+                                                className="block w-full py-2 bg-linear-to-r from-purple-600 to-pink-600 text-white text-center rounded-md hover:from-purple-700 hover:to-pink-700 transition-colors"
                                             >
                                                 查看主页
                                             </Link>
@@ -310,7 +310,7 @@ export default function Creators() {
                     </p>
                     <Link
                         href="/become-creator"
-                        className="px-8 py-4 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium text-center hover:from-purple-700 hover:to-pink-700 transition-colors shadow-lg hover:shadow-xl"
+                        className="px-8 py-4 rounded-full bg-linear-to-r from-purple-600 to-pink-600 text-white font-medium text-center hover:from-purple-700 hover:to-pink-700 transition-colors shadow-lg hover:shadow-xl"
                     >
                         立即申请
                     </Link>

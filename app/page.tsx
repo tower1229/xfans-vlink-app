@@ -82,13 +82,13 @@ export default function Home() {
     <HomeLayout>
       {/* 英雄区域 */}
       <section className="relative py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 to-pink-600/20 z-0"></div>
+        <div className="absolute inset-0 bg-linear-to-br from-purple-600/20 to-pink-600/20 z-0"></div>
         <div className="container mx-auto px-4 relative z-10">
           <div className="flex flex-col lg:flex-row items-center">
             <div className="lg:w-1/2 mb-12 lg:mb-0">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">
                 <span className="block">连接创作者与粉丝的</span>
-                <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-transparent bg-clip-text">
+                <span className="bg-linear-to-r from-purple-600 to-pink-600 text-transparent bg-clip-text">
                   新一代内容平台
                 </span>
               </h1>
@@ -98,7 +98,7 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                 <Link
                   href="/signup"
-                  className="px-8 py-4 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium text-center hover:from-purple-700 hover:to-pink-700 transition-colors shadow-lg hover:shadow-xl"
+                  className="px-8 py-4 rounded-full bg-linear-to-r from-purple-600 to-pink-600 text-white font-medium text-center hover:from-purple-700 hover:to-pink-700 transition-colors shadow-lg hover:shadow-xl"
                 >
                   免费注册
                 </Link>
@@ -112,7 +112,7 @@ export default function Home() {
             </div>
             <div className="lg:w-1/2 relative">
               <div className="relative w-full h-[400px] md:h-[500px] rounded-2xl overflow-hidden shadow-2xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-600/80 to-pink-600/80 mix-blend-overlay"></div>
+                <div className="absolute inset-0 bg-linear-to-br from-purple-600/80 to-pink-600/80 mix-blend-overlay"></div>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-white text-center p-8">
                     <div className="text-6xl mb-4">🚀</div>
@@ -139,7 +139,7 @@ export default function Home() {
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="bg-gray-50 rounded-xl p-8 shadow-sm hover:shadow-md transition-shadow"
+                className="bg-gray-50 rounded-xl p-8 shadow-xs hover:shadow-md transition-shadow"
               >
                 <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-6">
                   {feature.icon}
@@ -173,9 +173,9 @@ export default function Home() {
             {featuredCreators.map((creator) => (
               <div
                 key={creator.id}
-                className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                className="bg-white rounded-xl overflow-hidden shadow-xs hover:shadow-md transition-shadow"
               >
-                <div className="h-40 bg-gradient-to-r from-purple-400 to-pink-400"></div>
+                <div className="h-40 bg-linear-to-r from-purple-400 to-pink-400"></div>
                 <div className="p-6 relative">
                   <div className="absolute -top-12 left-6 w-20 h-20 rounded-full bg-gray-200 border-4 border-white overflow-hidden">
                     <div className="w-full h-full flex items-center justify-center text-gray-400">
@@ -229,7 +229,7 @@ export default function Home() {
       </section>
 
       {/* CTA区域 */}
-      <section className="py-20 bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+      <section className="py-20 bg-linear-to-r from-purple-600 to-pink-600 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             准备好开始你的创作之旅了吗？

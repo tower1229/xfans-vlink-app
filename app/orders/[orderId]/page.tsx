@@ -138,7 +138,7 @@ export default function OrderDetail() {
 
     return (
         <DashboardLayout>
-            <div className="bg-white rounded-lg shadow">
+            <div className="bg-white rounded-lg shadow-sm">
                 <div className="border-b border-gray-200 px-6 py-4">
                     <div className="flex justify-between items-center">
                         <h1 className="text-xl font-semibold text-gray-900">订单详情</h1>

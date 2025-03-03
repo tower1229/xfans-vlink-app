@@ -159,7 +159,7 @@ export default function Orders() {
 
   return (
     <DashboardLayout>
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-white rounded-lg shadow-sm">
         <div className="border-b border-gray-200">
           <nav className="flex -mb-px">
             <button

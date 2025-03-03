@@ -421,7 +421,7 @@ export default function TestPage() {
               value={productId}
               onChange={(e) => setProductId(e.target.value)}
               placeholder="输入产品ID"
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border rounded-sm"
             />
           </div>
 
@@ -431,7 +431,7 @@ export default function TestPage() {
               type="text"
               value={chainId}
               readOnly
-              className="w-full p-2 border rounded bg-gray-100"
+              className="w-full p-2 border rounded-sm bg-gray-100"
             />
             <p className="text-xs text-gray-500 mt-1">
               固定使用Sepolia测试网 (11155111)
@@ -446,12 +446,12 @@ export default function TestPage() {
                 value={userAddress}
                 onChange={(e) => setUserAddress(e.target.value)}
                 placeholder="钱包地址将自动填充"
-                className="flex-1 p-2 border rounded"
+                className="flex-1 p-2 border rounded-sm"
                 readOnly={true}
               />
               <button
                 onClick={connectWallet}
-                className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
+                className="bg-gray-500 text-white py-2 px-4 rounded-sm hover:bg-gray-600"
               >
                 刷新钱包
               </button>
@@ -479,7 +479,7 @@ export default function TestPage() {
                 value={customGasLimit}
                 onChange={(e) => setCustomGasLimit(e.target.value)}
                 placeholder="输入Gas限制"
-                className="w-full p-2 border rounded"
+                className="w-full p-2 border rounded-sm"
               />
               <p className="text-xs text-gray-500 mt-1">
                 推荐值: 800,000 - 1,000,000（复杂合约可能需要更高的Gas限制）
@@ -490,7 +490,7 @@ export default function TestPage() {
           <button
             onClick={submitOrder}
             disabled={loading || !productId || !userAddress || !walletClient}
-            className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed w-full"
+            className="bg-blue-500 text-white py-2 px-4 rounded-sm hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed w-full"
           >
             {loading ? "提交中..." : "提交订单"}
           </button>
@@ -498,7 +498,7 @@ export default function TestPage() {
 
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h3 className="text-lg font-semibold mb-2">状态:</h3>
-          <pre className="whitespace-pre-wrap break-words bg-gray-100 p-4 rounded">
+          <pre className="whitespace-pre-wrap break-words bg-gray-100 p-4 rounded-sm">
             {txStatus}
           </pre>
         </div>
