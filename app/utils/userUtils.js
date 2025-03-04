@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { db } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
+import { ValidationError } from "../api/middleware/errorHandler";
 
 // JWT密钥，应该从环境变量中获取
 const JWT_SECRET = "your_jwt_secret_key_here"; // 使用固定的密钥，确保与客户端使用的密钥一致
@@ -60,14 +61,14 @@ export async function createUser(userData) {
         username,
         email,
         password: passwordHash,
-        address: walletAddress,
+        walletAddress: walletAddress,
         role,
       },
       select: {
         id: true,
         username: true,
         email: true,
-        address: true,
+        walletAddress: true,
         role: true,
         createdAt: true,
       },
@@ -78,7 +79,7 @@ export async function createUser(userData) {
       id: newUser.id,
       username: newUser.username,
       email: newUser.email,
-      wallet_address: newUser.address,
+      wallet_address: newUser.walletAddress,
       role: newUser.role,
       created_at: newUser.createdAt,
     };
@@ -95,6 +96,11 @@ export async function createUser(userData) {
  */
 export async function getUserByUsername(username) {
   try {
+    // 如果username为空，抛出验证错误
+    if (!username) {
+      throw new ValidationError("用户名不能为空");
+    }
+
     // 使用Prisma的原生查询方法
     const user = await db.user.findUnique({
       where: {
@@ -105,7 +111,7 @@ export async function getUserByUsername(username) {
         username: true,
         email: true,
         password: true,
-        address: true,
+        walletAddress: true,
         role: true,
         createdAt: true,
         updatedAt: true,
@@ -120,12 +126,15 @@ export async function getUserByUsername(username) {
       username: user.username,
       email: user.email,
       password_hash: user.password,
-      wallet_address: user.address,
+      wallet_address: user.walletAddress,
       role: user.role,
       created_at: user.createdAt,
       updated_at: user.updatedAt,
     };
   } catch (error) {
+    if (error instanceof ValidationError) {
+      throw error;
+    }
     console.error("获取用户失败:", error);
     throw error;
   }
@@ -151,7 +160,7 @@ export async function getUserByEmail(email) {
         username: true,
         email: true,
         password: true,
-        address: true,
+        walletAddress: true,
         role: true,
         createdAt: true,
         updatedAt: true,
@@ -166,7 +175,7 @@ export async function getUserByEmail(email) {
       username: user.username,
       email: user.email,
       password_hash: user.password,
-      wallet_address: user.address,
+      wallet_address: user.walletAddress,
       role: user.role,
       created_at: user.createdAt,
       updated_at: user.updatedAt,
@@ -187,14 +196,14 @@ export async function getUserByWalletAddress(walletAddress) {
     // 使用Prisma的原生查询方法
     const user = await db.user.findFirst({
       where: {
-        address: walletAddress,
+        walletAddress: walletAddress,
       },
       select: {
         id: true,
         username: true,
         email: true,
         password: true,
-        address: true,
+        walletAddress: true,
         role: true,
         createdAt: true,
         updatedAt: true,
@@ -209,7 +218,7 @@ export async function getUserByWalletAddress(walletAddress) {
       username: user.username,
       email: user.email,
       password_hash: user.password,
-      wallet_address: user.address,
+      wallet_address: user.walletAddress,
       role: user.role,
       created_at: user.createdAt,
       updated_at: user.updatedAt,
@@ -236,7 +245,7 @@ export async function getUserById(id) {
         id: true,
         username: true,
         email: true,
-        address: true,
+        walletAddress: true,
         role: true,
         createdAt: true,
         updatedAt: true,
@@ -250,7 +259,7 @@ export async function getUserById(id) {
       id: user.id,
       username: user.username,
       email: user.email,
-      wallet_address: user.address,
+      wallet_address: user.walletAddress,
       role: user.role,
       created_at: user.createdAt,
       updated_at: user.updatedAt,
@@ -345,7 +354,7 @@ export async function verifyRefreshToken(refreshToken) {
             id: true,
             username: true,
             role: true,
-            address: true,
+            walletAddress: true,
           },
         },
       },
@@ -359,7 +368,7 @@ export async function verifyRefreshToken(refreshToken) {
       id: token.user.id,
       username: token.user.username,
       role: token.user.role,
-      wallet_address: token.user.address,
+      wallet_address: token.user.walletAddress,
     };
   } catch (error) {
     console.error("验证刷新令牌失败:", error);
@@ -399,8 +408,8 @@ export function verifyJwtToken(token) {
     console.log("JWT令牌验证成功:", decoded);
 
     // 确保返回的用户信息包含walletAddress字段
-    if (decoded && decoded.address && !decoded.walletAddress) {
-      decoded.walletAddress = decoded.address;
+    if (decoded && decoded.walletAddress && !decoded.wallet_address) {
+      decoded.wallet_address = decoded.walletAddress;
     }
 
     return decoded;
@@ -424,7 +433,7 @@ export async function updateUser(userId, userData) {
     // 构建更新数据
     if (username) updateData.username = username;
     if (email) updateData.email = email;
-    if (walletAddress) updateData.address = walletAddress;
+    if (walletAddress) updateData.walletAddress = walletAddress;
     if (role) updateData.role = role;
 
     // 如果有密码，加密后再更新
@@ -448,7 +457,7 @@ export async function updateUser(userId, userData) {
         id: true,
         username: true,
         email: true,
-        address: true,
+        walletAddress: true,
         role: true,
         createdAt: true,
         updatedAt: true,
@@ -460,7 +469,7 @@ export async function updateUser(userId, userData) {
       id: updatedUser.id,
       username: updatedUser.username,
       email: updatedUser.email,
-      wallet_address: updatedUser.address,
+      wallet_address: updatedUser.walletAddress,
       role: updatedUser.role,
       created_at: updatedUser.createdAt,
       updated_at: updatedUser.updatedAt,

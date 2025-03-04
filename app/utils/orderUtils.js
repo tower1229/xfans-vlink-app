@@ -9,30 +9,255 @@ import { signMessage } from "viem/accounts";
 import { db } from "@/lib/db";
 import { getPostById } from "./postUtils";
 
+// 定义订单状态常量
+export const OrderStatus = {
+  PENDING: 0, // 待支付
+  COMPLETED: 1, // 已完成
+  EXPIRED: 2, // 已过期
+  FAILED: 3, // 已失败
+  CLOSED: 4, // 已关闭
+};
+
+// 订单状态映射（用于显示）
+export const OrderStatusMap = {
+  [OrderStatus.PENDING]: "待支付",
+  [OrderStatus.COMPLETED]: "已完成",
+  [OrderStatus.EXPIRED]: "已过期",
+  [OrderStatus.FAILED]: "已失败",
+  [OrderStatus.CLOSED]: "已关闭",
+};
+
+// 定义错误类型
+export class OrderError extends Error {
+  constructor(message, code = "ORDER_ERROR") {
+    super(message);
+    this.name = "OrderError";
+    this.code = code;
+  }
+}
+
 /**
  * 生成唯一的订单ID
  * @param {string} productId - 产品ID
  * @param {string} userAddress - 用户钱包地址
- * @returns {string} - 生成的订单ID (bytes32 哈希值)
+ * @returns {Object} - 包含orderId和timestamp的对象
  */
 export function generateOrderId(productId, userAddress) {
-  // 创建时间戳和随机数，确保订单ID的唯一性
-  const timestamp = Date.now();
-  const randomNum = Math.floor(Math.random() * 1000000);
+  try {
+    if (!productId || !userAddress) {
+      throw new OrderError("产品ID和用户地址不能为空", "INVALID_PARAMS");
+    }
 
-  // 将产品ID、时间戳、用户地址和随机数打包编码
-  const orderIdInput = encodePacked(
-    ["string", "uint256", "address", "uint256"],
-    [productId, BigInt(timestamp), userAddress, BigInt(randomNum)]
-  );
+    const timestamp = Date.now();
+    const randomNum = Math.floor(Math.random() * 1000000);
 
-  // 计算哈希值作为订单ID
-  const orderId = keccak256(orderIdInput);
+    const orderIdInput = encodePacked(
+      ["string", "uint256", "address", "uint256"],
+      [productId, BigInt(timestamp), userAddress, BigInt(randomNum)]
+    );
 
-  return {
-    orderId,
-    timestamp,
+    const orderId = keccak256(orderIdInput);
+
+    return {
+      orderId,
+      timestamp,
+    };
+  } catch (error) {
+    if (error instanceof OrderError) throw error;
+    throw new OrderError(
+      `生成订单ID失败: ${error.message}`,
+      "GENERATE_ID_ERROR"
+    );
+  }
+}
+
+/**
+ * 验证订单数据
+ * @param {Object} orderData - 订单数据
+ * @throws {OrderError} 如果验证失败
+ */
+function validateOrderData(orderData) {
+  if (!orderData || typeof orderData !== "object") {
+    throw new OrderError("订单数据必须是一个对象", "INVALID_ORDER_DATA");
+  }
+
+  const requiredFields = ["productId", "userId", "userAddress", "chainId"];
+  for (const field of requiredFields) {
+    if (!orderData[field]) {
+      throw new OrderError(`缺少必要字段: ${field}`, "MISSING_REQUIRED_FIELD");
+    }
+  }
+}
+
+/**
+ * 格式化数据库订单对象
+ * @param {Object} dbOrder - 数据库订单对象
+ * @returns {Object} 格式化后的订单对象
+ */
+function formatOrderFromDb(dbOrder) {
+  if (!dbOrder) return null;
+
+  const formattedOrder = {
+    id: dbOrder.id,
+    productId: dbOrder.post?.id || dbOrder.postId,
+    userAddress: dbOrder.user?.walletAddress || dbOrder.userId,
+    price: dbOrder.amount.toString(),
+    status: dbOrder.status,
+    transactionHash: dbOrder.txHash,
+    createdAt: dbOrder.createdAt,
+    updatedAt: dbOrder.updatedAt,
+    expiresAt: dbOrder.expiresAt,
   };
+
+  if (dbOrder.post) {
+    formattedOrder.tokenAddress = dbOrder.post.tokenAddress;
+    formattedOrder.ownerAddress = dbOrder.post.ownerAddress;
+    formattedOrder.chainId = dbOrder.post.chainId;
+  }
+
+  return formattedOrder;
+}
+
+/**
+ * 更新过期订单状态
+ * @returns {Promise<number>} 更新的订单数量
+ */
+export async function updateExpiredOrders() {
+  try {
+    const now = new Date();
+
+    const result = await db.order.updateMany({
+      where: {
+        status: OrderStatus.PENDING,
+        expiresAt: {
+          lt: now,
+        },
+      },
+      data: {
+        status: OrderStatus.EXPIRED,
+        updatedAt: now,
+      },
+    });
+
+    return result?.count || 0;
+  } catch (error) {
+    console.error("更新过期订单失败:", error);
+    return 0;
+  }
+}
+
+/**
+ * 获取用户订单列表
+ * @param {string} userAddress 用户地址
+ * @param {string} status 订单状态
+ * @param {Object} options 分页选项
+ * @returns {Promise<{orders: Array, total: number}>} 订单列表和总数
+ */
+export async function getOrdersByUser(userAddress, status, options = {}) {
+  try {
+    const { skip = 0, limit = 10 } = options;
+
+    // 构建查询条件
+    const query = { userAddress };
+    if (status && status !== "all") {
+      query.status = status;
+    }
+
+    // 使用 Promise.all 并行查询数据和总数
+    const [orders, total] = await Promise.all([
+      db.order.findMany({
+        where: query,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+        include: {
+          post: true,
+          user: true,
+          product: {
+            select: {
+              title: true,
+              price: true,
+              image: true,
+            },
+          },
+        },
+      }),
+      db.order.count({ where: query }),
+    ]);
+
+    // 格式化订单数据
+    const formattedOrders = orders.map((order) => ({
+      id: order.id,
+      productId: order.post?.id || order.postId,
+      price: order.amount.toString(),
+      tokenAddress: order.post?.tokenAddress || order.tokenAddress,
+      chainId: order.post?.chainId || order.chainId,
+      status: order.status,
+      statusText: OrderStatusMap[order.status],
+      transactionHash: order.txHash,
+      createdAt: order.createdAt,
+      expiresAt: order.expiresAt,
+      isExpired:
+        order.expiresAt < new Date() && order.status === OrderStatus.PENDING,
+      product: order.post, // 包含商品信息
+    }));
+
+    return { orders: formattedOrders, total };
+  } catch (error) {
+    console.error("获取用户订单列表失败:", error);
+    throw new OrderError("获取订单列表失败", "DB_ERROR");
+  }
+}
+
+/**
+ * 创建新订单
+ * @param {Object} orderData - 订单数据
+ * @returns {Promise<Object>} 创建的订单
+ */
+export async function createNewOrder(orderData) {
+  try {
+    validateOrderData(orderData);
+
+    const post = await getPostById(orderData.productId);
+    if (!post) {
+      throw new OrderError(
+        `产品 ${orderData.productId} 不存在`,
+        "PRODUCT_NOT_FOUND"
+      );
+    }
+
+    const { orderId } = generateOrderId(
+      orderData.productId,
+      orderData.userAddress
+    );
+
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 1);
+
+    const newOrderData = {
+      id: orderId,
+      productId: orderData.productId,
+      userId: orderData.userId,
+      price: post.price,
+      tokenAddress: post.tokenAddress || process.env.DEFAULT_TOKEN_ADDRESS,
+      ownerAddress: post.ownerAddress,
+      chainId: orderData.chainId,
+      status: OrderStatus.PENDING,
+      expiresAt,
+    };
+
+    const signature = await generateOrderSignature(newOrderData);
+    newOrderData.signature = signature;
+
+    const order = await createOrder(newOrderData);
+    return order;
+  } catch (error) {
+    if (error instanceof OrderError) throw error;
+    throw new OrderError(
+      `创建订单失败: ${error.message}`,
+      "CREATE_ORDER_ERROR"
+    );
+  }
 }
 
 /**
@@ -208,97 +433,6 @@ export async function updateOrderStatus(orderId, status, txHash = null) {
 }
 
 /**
- * 更新过期订单
- * @returns {Promise<number>} 更新的订单数量
- */
-export async function updateExpiredOrders() {
-  try {
-    const now = new Date();
-
-    // 使用Prisma更新过期订单
-    const result = await db.order.updateMany({
-      where: {
-        status: "pending",
-        expiresAt: {
-          lt: now,
-        },
-      },
-      data: {
-        status: "expired",
-        updatedAt: now,
-      },
-    });
-
-    console.log(`已将 ${result.count} 个过期订单标记为过期`);
-    return result.count;
-  } catch (error) {
-    console.error("更新过期订单失败:", error);
-    throw new Error(`更新过期订单失败: ${error.message}`);
-  }
-}
-
-/**
- * 获取用户订单
- * @param {string} userAddress 用户钱包地址
- * @param {string} status 可选的订单状态过滤
- * @returns {Promise<Array>} 订单列表
- */
-export async function getOrdersByUser(userAddress, status = null) {
-  try {
-    console.log(
-      `查询用户订单: 钱包地址=${userAddress}, 状态=${status || "所有"}`
-    );
-
-    // 先查询用户ID
-    const user = await db.user.findFirst({
-      where: {
-        address: userAddress,
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (!user) {
-      console.log(`未找到钱包地址为 ${userAddress} 的用户`);
-      return [];
-    }
-
-    console.log(`找到用户ID: ${user.id}`);
-
-    // 构建查询条件
-    const whereCondition = {
-      userId: user.id, // 使用数据库中的用户ID
-    };
-
-    // 如果提供了状态，添加到查询条件
-    if (status) {
-      whereCondition.status = status;
-    }
-
-    console.log("查询条件:", JSON.stringify(whereCondition));
-
-    // 使用Prisma查询用户订单
-    const orders = await db.order.findMany({
-      where: whereCondition,
-      orderBy: {
-        createdAt: "desc",
-      },
-      include: {
-        post: true,
-        user: true,
-      },
-    });
-
-    console.log(`找到 ${orders.length} 个订单`);
-    return orders.map(formatOrderFromDb);
-  } catch (error) {
-    console.error(`获取用户 ${userAddress} 的订单失败:`, error);
-    throw new Error(`获取用户订单失败: ${error.message}`);
-  }
-}
-
-/**
  * 获取所有订单
  * @returns {Promise<Array>} 订单列表
  */
@@ -320,109 +454,4 @@ export async function getAllOrders() {
     console.error("获取所有订单失败:", error);
     throw new Error(`获取所有订单失败: ${error.message}`);
   }
-}
-
-/**
- * 创建新订单
- * @param {Object} orderData 订单数据
- * @returns {Promise<Object>} 创建的订单
- */
-export async function createNewOrder(orderData) {
-  try {
-    // Validate orderData
-    if (!orderData || typeof orderData !== "object") {
-      throw new Error("Invalid order data: orderData must be an object");
-    }
-
-    if (!orderData.productId) {
-      throw new Error("Invalid order data: productId is required");
-    }
-
-    if (!orderData.userId) {
-      throw new Error("Invalid order data: userId is required");
-    }
-
-    if (!orderData.userAddress) {
-      throw new Error("Invalid order data: userAddress is required");
-    }
-
-    if (!orderData.chainId) {
-      throw new Error("Invalid order data: chainId is required");
-    }
-
-    // 获取产品信息
-    const post = await getPostById(orderData.productId);
-    if (!post) {
-      throw new Error(`产品 ${orderData.productId} 不存在`);
-    }
-
-    // 生成订单ID
-    const { orderId } = generateOrderId(
-      orderData.productId,
-      orderData.userAddress
-    );
-
-    // 计算过期时间（默认1小时后过期）
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 1);
-
-    // 准备订单数据
-    const newOrderData = {
-      id: orderId,
-      productId: orderData.productId,
-      userId: orderData.userId,
-      price: post.price,
-      tokenAddress: post.tokenAddress || process.env.DEFAULT_TOKEN_ADDRESS,
-      ownerAddress: post.ownerAddress,
-      chainId: orderData.chainId,
-      status: "pending",
-      expiresAt,
-    };
-
-    // 生成签名
-    const signature = await generateOrderSignature(newOrderData);
-    newOrderData.signature = signature;
-
-    // 创建订单
-    const order = await createOrder(newOrderData);
-
-    // 确保expiresAt字段存在于返回对象中
-    if (!order.expiresAt) {
-      order.expiresAt = expiresAt;
-    }
-
-    return order;
-  } catch (error) {
-    console.error("创建新订单失败:", error);
-    throw new Error(`创建新订单失败: ${error.message}`);
-  }
-}
-
-/**
- * 格式化数据库订单对象
- * @param {Object} dbOrder 数据库订单对象
- * @returns {Object} 格式化后的订单对象
- */
-function formatOrderFromDb(dbOrder) {
-  // 处理Prisma返回的对象
-  const formattedOrder = {
-    id: dbOrder.id,
-    productId: dbOrder.post?.id || dbOrder.postId,
-    userAddress: dbOrder.user?.id || dbOrder.userId,
-    price: dbOrder.amount.toString(),
-    status: dbOrder.status,
-    transactionHash: dbOrder.txHash,
-    createdAt: dbOrder.createdAt,
-    updatedAt: dbOrder.updatedAt,
-  };
-
-  // 如果有关联的post对象，从中获取一些字段
-  if (dbOrder.post) {
-    formattedOrder.tokenAddress = dbOrder.post.tokenAddress;
-    formattedOrder.ownerAddress = dbOrder.post.ownerAddress;
-    formattedOrder.chainId = dbOrder.post.chainId;
-  }
-
-  // 返回格式化后的订单
-  return formattedOrder;
 }

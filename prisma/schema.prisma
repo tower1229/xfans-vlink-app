@@ -33,9 +33,16 @@ model Order {
   id        String   @id
   userId    String
   postId    String   // 付费内容ID
-  status    String   @default("pending") // pending, completed, failed
+  // 订单状态:
+  // 0: pending - 待支付
+  // 1: completed - 已完成
+  // 2: expired - 已过期
+  // 3: failed - 已失败
+  // 4: closed - 已关闭
+  status    Int      @default(0)
   amount    BigInt
   txHash    String?
+  expiresAt DateTime // 订单过期时间
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -45,19 +52,24 @@ model Order {
   // 关联付费内容
   post Post @relation(fields: [postId], references: [id])
 
+  // 添加索引以优化查询性能
+  @@index([status, expiresAt])
+  @@index([userId, status])
+  @@index([createdAt])
+
   @@map("orders")
 }
 
 // 用户模型
 model User {
-  id        String   @id
-  username  String   @unique
-  email     String?  @unique
-  password  String
-  address   String?  // 钱包地址
-  role      String   @default("user") // user, admin
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id
+  username     String   @unique
+  email        String?  @unique
+  password     String
+  walletAddress String?  // 钱包地址
+  role         String   @default("user") // user, admin
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // 关联订单
   orders Order[]

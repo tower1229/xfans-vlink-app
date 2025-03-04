@@ -18,12 +18,25 @@ interface Order {
   transactionHash?: string;
 }
 
+interface PaginationInfo {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  pageSize: number;
+}
+
 export default function Orders() {
   const [activeTab, setActiveTab] = useState("all");
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [closing, setClosing] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    pageSize: 10,
+  });
   const router = useRouter();
 
   // Fetch orders from API
@@ -31,11 +44,13 @@ export default function Orders() {
     const fetchOrders = async () => {
       try {
         setLoading(true);
-        // Build the API URL with status filter if not "all"
-        const url =
-          activeTab === "all"
-            ? "/api/v1/orders"
-            : `/api/v1/orders?status=${activeTab}`;
+        // Build the API URL with status filter and pagination
+        let url = `/api/v1/orders?page=${pagination.currentPage}&pageSize=${pagination.pageSize}`;
+
+        // Add status filter if not "all"
+        if (activeTab !== "all") {
+          url += `&status=${activeTab}`;
+        }
 
         const response = await fetchWithAuth(url);
 
@@ -47,7 +62,7 @@ export default function Orders() {
 
         if (data.success) {
           // Transform API data to match our component's expected format
-          const formattedOrders = data.data.map((order: any) => ({
+          const formattedOrders = data.data.orders.map((order: any) => ({
             id: order.id,
             customer: order.userAddress,
             date: new Date(order.createdAt).toLocaleString("zh-CN", {
@@ -59,13 +74,19 @@ export default function Orders() {
             }),
             total: `¥${order.price}`,
             status: order.status,
-            items: 1, // Assuming each order has one item
+            items: 1,
             userAddress: order.userAddress,
             productId: order.productId,
             transactionHash: order.transactionHash,
           }));
 
           setOrders(formattedOrders);
+          setPagination({
+            currentPage: data.data.currentPage,
+            totalPages: data.data.totalPages,
+            totalItems: data.data.totalItems,
+            pageSize: data.data.pageSize,
+          });
         } else {
           throw new Error(data.message || "Failed to fetch orders");
         }
@@ -80,7 +101,7 @@ export default function Orders() {
     };
 
     fetchOrders();
-  }, [activeTab]); // Re-fetch when activeTab changes
+  }, [activeTab, pagination.currentPage, pagination.pageSize]);
 
   // No need for client-side filtering since we're filtering on the server
   const filteredOrders = orders;
@@ -216,95 +237,256 @@ export default function Orders() {
             ) : error ? (
               <p>错误: {error}</p>
             ) : (
-              <div className="overflow-x-auto">
-                <div className="inline-block min-w-full">
-                  <div className="grid grid-cols-10 gap-0 bg-gray-50 border-b border-gray-200">
-                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      订单ID
-                    </div>
-                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      客户
-                    </div>
-                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      日期
-                    </div>
-                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      总金额
-                    </div>
-                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      状态
-                    </div>
-                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      商品数量
-                    </div>
-                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      用户地址
-                    </div>
-                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      商品ID
-                    </div>
-                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      交易哈希
-                    </div>
-                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      操作
-                    </div>
-                  </div>
-                  <div className="bg-white divide-y divide-gray-200">
-                    {filteredOrders.map((order) => (
-                      <div key={order.id} className="grid grid-cols-10 gap-0">
-                        <div className="px-4 py-4 text-sm text-gray-900 break-all">
-                          {order.id}
-                        </div>
-                        <div className="px-4 py-4 text-sm text-gray-900 break-all">
-                          {order.customer}
-                        </div>
-                        <div className="px-4 py-4 text-sm text-gray-500">
-                          {order.date}
-                        </div>
-                        <div className="px-4 py-4 text-sm text-gray-900">
-                          {order.total}
-                        </div>
-                        <div className="px-4 py-4 text-sm text-gray-900">
-                          <span
-                            className={`px-2 py-1 text-xs rounded-full ${getStatusClass(
-                              order.status
-                            )}`}
-                          >
-                            {translateStatus(order.status)}
-                          </span>
-                        </div>
-                        <div className="px-4 py-4 text-sm text-gray-900">
-                          {order.items}
-                        </div>
-                        <div className="px-4 py-4 text-sm text-gray-900 break-all">
-                          {order.userAddress}
-                        </div>
-                        <div className="px-4 py-4 text-sm text-gray-900 break-all">
-                          {order.productId}
-                        </div>
-                        <div className="px-4 py-4 text-sm text-gray-900 break-all">
-                          {order.transactionHash}
-                        </div>
-                        <div className="px-4 py-4 text-sm text-gray-900">
-                          <button
-                            onClick={() => handleViewOrder(order.id)}
-                            className="text-indigo-600 hover:text-indigo-900 mr-2"
-                          >
-                            查看
-                          </button>
-                          <button
-                            onClick={() => handleCloseOrder(order.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            关闭
-                          </button>
-                        </div>
+              <>
+                <div className="overflow-x-auto">
+                  <div className="min-w-full inline-block">
+                    <div className="border-b bg-gray-50 border-gray-200 grid gap-0 grid-cols-10">
+                      <div className="font-medium text-left text-xs tracking-wider py-3 px-4 text-gray-500 uppercase">
+                        订单ID
                       </div>
-                    ))}
+                      <div className="font-medium text-left text-xs tracking-wider py-3 px-4 text-gray-500 uppercase">
+                        客户
+                      </div>
+                      <div className="font-medium text-left text-xs tracking-wider py-3 px-4 text-gray-500 uppercase">
+                        日期
+                      </div>
+                      <div className="font-medium text-left text-xs tracking-wider py-3 px-4 text-gray-500 uppercase">
+                        总金额
+                      </div>
+                      <div className="font-medium text-left text-xs tracking-wider py-3 px-4 text-gray-500 uppercase">
+                        状态
+                      </div>
+                      <div className="font-medium text-left text-xs tracking-wider py-3 px-4 text-gray-500 uppercase">
+                        商品数量
+                      </div>
+                      <div className="font-medium text-left text-xs tracking-wider py-3 px-4 text-gray-500 uppercase">
+                        用户地址
+                      </div>
+                      <div className="font-medium text-left text-xs tracking-wider py-3 px-4 text-gray-500 uppercase">
+                        商品ID
+                      </div>
+                      <div className="font-medium text-left text-xs tracking-wider py-3 px-4 text-gray-500 uppercase">
+                        交易哈希
+                      </div>
+                      <div className="font-medium text-left text-xs tracking-wider py-3 px-4 text-gray-500 uppercase">
+                        操作
+                      </div>
+                    </div>
+                    <div className="divide-y bg-white divide-gray-200">
+                      {filteredOrders.map((order) => (
+                        <div key={order.id} className="grid gap-0 grid-cols-10">
+                          <div className="text-sm py-4 px-4 text-gray-900 break-all">
+                            {order.id}
+                          </div>
+                          <div className="text-sm py-4 px-4 text-gray-900 break-all">
+                            {order.customer}
+                          </div>
+                          <div className="text-sm py-4 px-4 text-gray-500">
+                            {order.date}
+                          </div>
+                          <div className="text-sm py-4 px-4 text-gray-900">
+                            {order.total}
+                          </div>
+                          <div className="text-sm py-4 px-4 text-gray-900">
+                            <span
+                              className={`px-2 py-1 text-xs rounded-full ${getStatusClass(
+                                order.status
+                              )}`}
+                            >
+                              {translateStatus(order.status)}
+                            </span>
+                          </div>
+                          <div className="text-sm py-4 px-4 text-gray-900">
+                            {order.items}
+                          </div>
+                          <div className="text-sm py-4 px-4 text-gray-900 break-all">
+                            {order.userAddress}
+                          </div>
+                          <div className="text-sm py-4 px-4 text-gray-900 break-all">
+                            {order.productId}
+                          </div>
+                          <div className="text-sm py-4 px-4 text-gray-900 break-all">
+                            {order.transactionHash}
+                          </div>
+                          <div className="text-sm py-4 px-4 text-gray-900">
+                            <button
+                              onClick={() => handleViewOrder(order.id)}
+                              className="mr-2 text-indigo-600 hover:text-indigo-900"
+                            >
+                              查看
+                            </button>
+                            <button
+                              onClick={() => handleCloseOrder(order.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              关闭
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+
+                {/* Pagination Controls */}
+                <div className="mt-4 flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+                  <div className="flex flex-1 justify-between sm:hidden">
+                    <button
+                      onClick={() =>
+                        setPagination((prev) => ({
+                          ...prev,
+                          currentPage: Math.max(1, prev.currentPage - 1),
+                        }))
+                      }
+                      disabled={pagination.currentPage === 1}
+                      className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      上一页
+                    </button>
+                    <button
+                      onClick={() =>
+                        setPagination((prev) => ({
+                          ...prev,
+                          currentPage: Math.min(
+                            prev.totalPages,
+                            prev.currentPage + 1
+                          ),
+                        }))
+                      }
+                      disabled={
+                        pagination.currentPage === pagination.totalPages
+                      }
+                      className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      下一页
+                    </button>
+                  </div>
+                  <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm text-gray-700">
+                        显示第{" "}
+                        <span className="font-medium">
+                          {(pagination.currentPage - 1) * pagination.pageSize +
+                            1}
+                        </span>{" "}
+                        到{" "}
+                        <span className="font-medium">
+                          {Math.min(
+                            pagination.currentPage * pagination.pageSize,
+                            pagination.totalItems
+                          )}
+                        </span>{" "}
+                        条，共{" "}
+                        <span className="font-medium">
+                          {pagination.totalItems}
+                        </span>{" "}
+                        条
+                      </p>
+                    </div>
+                    <div>
+                      <nav
+                        className="isolate inline-flex -space-x-px rounded-md shadow-sm"
+                        aria-label="Pagination"
+                      >
+                        <button
+                          onClick={() =>
+                            setPagination((prev) => ({
+                              ...prev,
+                              currentPage: Math.max(1, prev.currentPage - 1),
+                            }))
+                          }
+                          disabled={pagination.currentPage === 1}
+                          className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                        >
+                          <span className="sr-only">上一页</span>
+                          <svg
+                            className="h-5 w-5"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            aria-hidden="true"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </button>
+                        {/* Page numbers */}
+                        {Array.from(
+                          { length: pagination.totalPages },
+                          (_, i) => i + 1
+                        )
+                          .filter(
+                            (page) =>
+                              page === 1 ||
+                              page === pagination.totalPages ||
+                              Math.abs(page - pagination.currentPage) <= 1
+                          )
+                          .map((page, index, array) => {
+                            if (index > 0 && array[index - 1] !== page - 1) {
+                              return (
+                                <span
+                                  key={`ellipsis-${page}`}
+                                  className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300"
+                                >
+                                  ...
+                                </span>
+                              );
+                            }
+                            return (
+                              <button
+                                key={page}
+                                onClick={() =>
+                                  setPagination((prev) => ({
+                                    ...prev,
+                                    currentPage: page,
+                                  }))
+                                }
+                                className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                                  page === pagination.currentPage
+                                    ? "z-10 bg-indigo-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                    : "text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            );
+                          })}
+                        <button
+                          onClick={() =>
+                            setPagination((prev) => ({
+                              ...prev,
+                              currentPage: Math.min(
+                                prev.totalPages,
+                                prev.currentPage + 1
+                              ),
+                            }))
+                          }
+                          disabled={
+                            pagination.currentPage === pagination.totalPages
+                          }
+                          className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                        >
+                          <span className="sr-only">下一页</span>
+                          <svg
+                            className="h-5 w-5"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            aria-hidden="true"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </button>
+                      </nav>
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>
