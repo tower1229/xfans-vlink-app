@@ -1,7 +1,9 @@
 import { createWalletClient } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { http } from "viem";
-import { getChainById } from "@/utils/chainUtils";
+import { getChainById } from "./chainUtils";
+import { isAddress } from "viem";
+import { ValidationError } from "../api/middleware/errorHandler";
 
 // 缓存配置
 const CACHE_CONFIG = {

@@ -1,9 +1,11 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { db } from "@/lib/db";
+import { db } from "../lib/db";
 import { v4 as uuidv4 } from "uuid";
 import { ValidationError } from "../api/middleware/errorHandler";
+import { SignJWT, jwtVerify } from "jose";
+import { cookies } from "next/headers";
 
 // JWT密钥，应该从环境变量中获取
 const JWT_SECRET = "your_jwt_secret_key_here"; // 使用固定的密钥，确保与客户端使用的密钥一致

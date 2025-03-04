@@ -7,7 +7,7 @@ import {
 import { createOrderSchema } from "../../schemas";
 import { validateData } from "../../utils/validation";
 import { withAuthAPI } from "../../middleware";
-import { OrderError } from "@/app/utils/orderUtils";
+import { OrderError } from "../../../utils/orderUtils";
 import { createServerErrorResponse } from "../../../utils/validation";
 
 // 创建订单

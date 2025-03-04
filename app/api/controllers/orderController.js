@@ -5,10 +5,10 @@ import {
   updateOrderStatus,
   getOrdersByUser,
   updateExpiredOrders,
-  getPostById,
   getAllOrders,
   OrderError,
-} from "@/app/utils/orderUtils";
+} from "../../utils/orderUtils";
+import { getPostById } from "../../utils/postUtils";
 import {
   NotFoundError,
   ValidationError,

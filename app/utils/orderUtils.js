@@ -6,7 +6,7 @@ import {
   parseAbiParameters,
 } from "viem";
 import { signMessage } from "viem/accounts";
-import { db } from "@/lib/db";
+import { db } from "../lib/db";
 import { getPostById } from "./postUtils";
 
 // 定义订单状态常量
