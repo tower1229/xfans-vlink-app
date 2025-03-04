@@ -32,9 +32,10 @@ export default function Orders() {
       try {
         setLoading(true);
         // Build the API URL with status filter if not "all"
-        const url = activeTab === "all"
-          ? '/api/v1/orders'
-          : `/api/v1/orders?status=${activeTab}`;
+        const url =
+          activeTab === "all"
+            ? "/api/v1/orders"
+            : `/api/v1/orders?status=${activeTab}`;
 
         const response = await fetchWithAuth(url);
 
@@ -49,28 +50,30 @@ export default function Orders() {
           const formattedOrders = data.data.map((order: any) => ({
             id: order.id,
             customer: order.userAddress,
-            date: new Date(order.createdAt).toLocaleString('zh-CN', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit'
+            date: new Date(order.createdAt).toLocaleString("zh-CN", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
             }),
             total: `¥${order.price}`,
             status: order.status,
             items: 1, // Assuming each order has one item
             userAddress: order.userAddress,
             productId: order.productId,
-            transactionHash: order.transactionHash
+            transactionHash: order.transactionHash,
           }));
 
           setOrders(formattedOrders);
         } else {
-          throw new Error(data.message || 'Failed to fetch orders');
+          throw new Error(data.message || "Failed to fetch orders");
         }
       } catch (err) {
-        console.error('Error fetching orders:', err);
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+        console.error("Error fetching orders:", err);
+        setError(
+          err instanceof Error ? err.message : "An unknown error occurred"
+        );
       } finally {
         setLoading(false);
       }
@@ -116,7 +119,7 @@ export default function Orders() {
 
   // Handle close order
   const handleCloseOrder = async (orderId: string) => {
-    if (!confirm('确定要关闭此订单吗？此操作不可撤销。')) {
+    if (!confirm("确定要关闭此订单吗？此操作不可撤销。")) {
       return;
     }
 
@@ -126,7 +129,7 @@ export default function Orders() {
       const payload = { status: "closed" };
 
       const response = await fetchWithAuth(`/api/v1/orders/${orderId}/status`, {
-        method: 'PUT',
+        method: "PUT",
         body: JSON.stringify(payload),
       });
 
@@ -138,20 +141,18 @@ export default function Orders() {
 
       if (data.success) {
         // Update the local order state
-        setOrders(prev =>
-          prev.map(order =>
-            order.id === orderId
-              ? { ...order, status: "closed" }
-              : order
+        setOrders((prev) =>
+          prev.map((order) =>
+            order.id === orderId ? { ...order, status: "closed" } : order
           )
         );
-        alert('订单已成功关闭');
+        alert("订单已成功关闭");
       } else {
-        throw new Error(data.message || 'Failed to close order');
+        throw new Error(data.message || "Failed to close order");
       }
     } catch (err) {
-      console.error('Error closing order:', err);
-      alert(err instanceof Error ? err.message : 'An unknown error occurred');
+      console.error("Error closing order:", err);
+      alert(err instanceof Error ? err.message : "An unknown error occurred");
     } finally {
       setClosing(null);
     }
@@ -160,7 +161,7 @@ export default function Orders() {
   // Handle export orders
   const handleExportOrders = () => {
     // Implementation for exporting orders
-    alert('导出功能即将实现');
+    alert("导出功能即将实现");
   };
 
   return (
@@ -170,41 +171,41 @@ export default function Orders() {
           <nav className="flex -mb-px">
             <button
               onClick={() => setActiveTab("all")}
-              className={`py-4 px-6 text-sm font-medium ${activeTab === "all"
-                ? "border-b-2 border-blue-500 text-blue-600"
-                : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`
-              }
+              className={`py-4 px-6 text-sm font-medium ${
+                activeTab === "all"
+                  ? "border-b-2 border-blue-500 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
             >
               全部
             </button>
             <button
               onClick={() => setActiveTab("pending")}
-              className={`py-4 px-6 text-sm font-medium ${activeTab === "pending"
-                ? "border-b-2 border-blue-500 text-blue-600"
-                : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`
-              }
+              className={`py-4 px-6 text-sm font-medium ${
+                activeTab === "pending"
+                  ? "border-b-2 border-blue-500 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
             >
               待支付
             </button>
             <button
               onClick={() => setActiveTab("completed")}
-              className={`py-4 px-6 text-sm font-medium ${activeTab === "completed"
-                ? "border-b-2 border-blue-500 text-blue-600"
-                : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`
-              }
+              className={`py-4 px-6 text-sm font-medium ${
+                activeTab === "completed"
+                  ? "border-b-2 border-blue-500 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
             >
               已完成
             </button>
             <button
               onClick={() => setActiveTab("closed")}
-              className={`py-4 px-6 text-sm font-medium ${activeTab === "closed"
-                ? "border-b-2 border-blue-500 text-blue-600"
-                : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`
-              }
+              className={`py-4 px-6 text-sm font-medium ${
+                activeTab === "closed"
+                  ? "border-b-2 border-blue-500 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
             >
               已关闭
             </button>
@@ -218,29 +219,73 @@ export default function Orders() {
               <div className="overflow-x-auto">
                 <div className="inline-block min-w-full">
                   <div className="grid grid-cols-10 gap-0 bg-gray-50 border-b border-gray-200">
-                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">订单ID</div>
-                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">客户</div>
-                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</div>
-                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">总金额</div>
-                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</div>
-                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">商品数量</div>
-                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用户地址</div>
-                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">商品ID</div>
-                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">交易哈希</div>
-                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</div>
+                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      订单ID
+                    </div>
+                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      客户
+                    </div>
+                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      日期
+                    </div>
+                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      总金额
+                    </div>
+                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      状态
+                    </div>
+                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      商品数量
+                    </div>
+                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      用户地址
+                    </div>
+                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      商品ID
+                    </div>
+                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      交易哈希
+                    </div>
+                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      操作
+                    </div>
                   </div>
                   <div className="bg-white divide-y divide-gray-200">
                     {filteredOrders.map((order) => (
                       <div key={order.id} className="grid grid-cols-10 gap-0">
-                        <div className="px-4 py-4 text-sm text-gray-900 break-all">{order.id}</div>
-                        <div className="px-4 py-4 text-sm text-gray-900 break-all">{order.customer}</div>
-                        <div className="px-4 py-4 text-sm text-gray-500">{order.date}</div>
-                        <div className="px-4 py-4 text-sm text-gray-900">{order.total}</div>
-                        <div className="px-4 py-4 text-sm text-gray-900">{translateStatus(order.status)}</div>
-                        <div className="px-4 py-4 text-sm text-gray-900">{order.items}</div>
-                        <div className="px-4 py-4 text-sm text-gray-900 break-all">{order.userAddress}</div>
-                        <div className="px-4 py-4 text-sm text-gray-900 break-all">{order.productId}</div>
-                        <div className="px-4 py-4 text-sm text-gray-900 break-all">{order.transactionHash}</div>
+                        <div className="px-4 py-4 text-sm text-gray-900 break-all">
+                          {order.id}
+                        </div>
+                        <div className="px-4 py-4 text-sm text-gray-900 break-all">
+                          {order.customer}
+                        </div>
+                        <div className="px-4 py-4 text-sm text-gray-500">
+                          {order.date}
+                        </div>
+                        <div className="px-4 py-4 text-sm text-gray-900">
+                          {order.total}
+                        </div>
+                        <div className="px-4 py-4 text-sm text-gray-900">
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${getStatusClass(
+                              order.status
+                            )}`}
+                          >
+                            {translateStatus(order.status)}
+                          </span>
+                        </div>
+                        <div className="px-4 py-4 text-sm text-gray-900">
+                          {order.items}
+                        </div>
+                        <div className="px-4 py-4 text-sm text-gray-900 break-all">
+                          {order.userAddress}
+                        </div>
+                        <div className="px-4 py-4 text-sm text-gray-900 break-all">
+                          {order.productId}
+                        </div>
+                        <div className="px-4 py-4 text-sm text-gray-900 break-all">
+                          {order.transactionHash}
+                        </div>
                         <div className="px-4 py-4 text-sm text-gray-900">
                           <button
                             onClick={() => handleViewOrder(order.id)}
