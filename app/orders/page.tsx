@@ -192,41 +192,37 @@ export default function Orders() {
           <nav className="flex -mb-px">
             <button
               onClick={() => setActiveTab("all")}
-              className={`py-4 px-6 text-sm font-medium ${
-                activeTab === "all"
-                  ? "border-b-2 border-blue-500 text-blue-600"
-                  : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+              className={`py-4 px-6 text-sm font-medium ${activeTab === "all"
+                ? "border-b-2 border-blue-500 text-blue-600"
+                : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
             >
               全部
             </button>
             <button
               onClick={() => setActiveTab("pending")}
-              className={`py-4 px-6 text-sm font-medium ${
-                activeTab === "pending"
-                  ? "border-b-2 border-blue-500 text-blue-600"
-                  : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+              className={`py-4 px-6 text-sm font-medium ${activeTab === "pending"
+                ? "border-b-2 border-blue-500 text-blue-600"
+                : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
             >
               待支付
             </button>
             <button
               onClick={() => setActiveTab("completed")}
-              className={`py-4 px-6 text-sm font-medium ${
-                activeTab === "completed"
-                  ? "border-b-2 border-blue-500 text-blue-600"
-                  : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+              className={`py-4 px-6 text-sm font-medium ${activeTab === "completed"
+                ? "border-b-2 border-blue-500 text-blue-600"
+                : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
             >
               已完成
             </button>
             <button
               onClick={() => setActiveTab("closed")}
-              className={`py-4 px-6 text-sm font-medium ${
-                activeTab === "closed"
-                  ? "border-b-2 border-blue-500 text-blue-600"
-                  : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+              className={`py-4 px-6 text-sm font-medium ${activeTab === "closed"
+                ? "border-b-2 border-blue-500 text-blue-600"
+                : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
             >
               已关闭
             </button>
@@ -443,11 +439,10 @@ export default function Orders() {
                                     currentPage: page,
                                   }))
                                 }
-                                className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
-                                  page === pagination.currentPage
-                                    ? "z-10 bg-indigo-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                                    : "text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
-                                }`}
+                                className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${page === pagination.currentPage
+                                  ? "z-10 bg-indigo-600 text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                  : "text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                                  }`}
                               >
                                 {page}
                               </button>
