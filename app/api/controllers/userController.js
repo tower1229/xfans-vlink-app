@@ -11,12 +11,17 @@ import {
   updateUser,
   deleteUser,
   verifyJwtToken,
-} from "@/utils";
+} from "../../utils";
 import {
   NotFoundError,
   ValidationError,
   UnauthorizedError,
 } from "../middleware/errorHandler";
+import {
+  validateData,
+  createServerErrorResponse,
+  createSuccessResponse,
+} from "../../utils";
 
 /**
  * 用户注册

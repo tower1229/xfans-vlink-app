@@ -1,4 +1,4 @@
-import { cleanupExpiredRefreshTokens } from "@/utils";
+import { cleanupExpiredRefreshTokens } from "../utils";
 
 // 清理间隔（毫秒）- 默认每天清理一次
 const CLEANUP_INTERVAL = 24 * 60 * 60 * 1000;
