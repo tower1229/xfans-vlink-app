@@ -1,4 +1,4 @@
-import { fetchWithAuth } from "../../_utils/api";
+import { fetchWithAuth } from "@/_utils/api";
 
 interface Order {
   id: string;

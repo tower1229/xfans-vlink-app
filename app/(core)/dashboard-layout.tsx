@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useAuth } from "../_hooks/useAuth";
-import ProtectedRoute from "../_components/auth/ProtectedRoute";
+import { useAuth } from "@/_hooks/useAuth";
+import ProtectedRoute from "@/_components/auth/ProtectedRoute";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;

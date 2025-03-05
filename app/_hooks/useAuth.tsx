@@ -8,8 +8,8 @@ import {
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { fetchWithAuth } from "../_utils/api";
-import { userStore } from "../_stores";
+import { fetchWithAuth } from "@/_utils/api";
+import { userStore } from "@/_stores";
 import { observer } from "mobx-react-lite";
 
 // 定义用户类型

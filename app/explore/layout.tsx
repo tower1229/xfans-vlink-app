@@ -1,6 +1,6 @@
 "use client";
 
-import { AuthProvider } from "../_hooks/useAuth";
+import { AuthProvider } from "@/_hooks/useAuth";
 
 export default function ExploreLayout({
   children,

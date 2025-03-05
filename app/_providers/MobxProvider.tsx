@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, useEffect } from "react";
-import { userStore } from "../_stores";
+import { userStore } from "@/_stores";
 
 interface MobxProviderProps {
   children: ReactNode;

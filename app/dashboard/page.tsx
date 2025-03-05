@@ -19,8 +19,8 @@ export default function Dashboard() {
   // 如果正在加载或用户未登录，显示加载状态
   if (loading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+      <div className="flex min-h-screen bg-gray-100 items-center justify-center">
+        <div className="border-t-transparent rounded-full border-4 border-purple-600 h-16 animate-spin w-16"></div>
       </div>
     );
   }
@@ -29,7 +29,7 @@ export default function Dashboard() {
     <DashboardLayout>
       <div className="p-6">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">
+          <h1 className="font-bold mb-2 text-2xl text-gray-800">
             欢迎回来，{user.username}
           </h1>
           <p className="text-gray-600">
@@ -37,13 +37,13 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow-xs">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium text-gray-700">内容统计</h2>
+        <div className="mb-8 grid gap-6 grid-cols-1 md:grid-cols-3">
+          <div className="bg-white rounded-lg shadow-xs p-6">
+            <div className="flex mb-4 items-center justify-between">
+              <h2 className="font-medium text-lg text-gray-700">内容统计</h2>
               <span className="text-purple-600">
                 <svg
-                  className="w-5 h-5"
+                  className="h-5 w-5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -58,16 +58,16 @@ export default function Dashboard() {
                 </svg>
               </span>
             </div>
-            <div className="text-3xl font-bold text-gray-800 mb-2">0</div>
+            <div className="font-bold mb-2 text-3xl text-gray-800">0</div>
             <p className="text-sm text-gray-500">已发布的内容</p>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-xs">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium text-gray-700">粉丝数量</h2>
+          <div className="bg-white rounded-lg shadow-xs p-6">
+            <div className="flex mb-4 items-center justify-between">
+              <h2 className="font-medium text-lg text-gray-700">粉丝数量</h2>
               <span className="text-purple-600">
                 <svg
-                  className="w-5 h-5"
+                  className="h-5 w-5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -82,16 +82,16 @@ export default function Dashboard() {
                 </svg>
               </span>
             </div>
-            <div className="text-3xl font-bold text-gray-800 mb-2">0</div>
+            <div className="font-bold mb-2 text-3xl text-gray-800">0</div>
             <p className="text-sm text-gray-500">关注您的粉丝</p>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-xs">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium text-gray-700">收入</h2>
+          <div className="bg-white rounded-lg shadow-xs p-6">
+            <div className="flex mb-4 items-center justify-between">
+              <h2 className="font-medium text-lg text-gray-700">收入</h2>
               <span className="text-purple-600">
                 <svg
-                  className="w-5 h-5"
+                  className="h-5 w-5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -106,17 +106,17 @@ export default function Dashboard() {
                 </svg>
               </span>
             </div>
-            <div className="text-3xl font-bold text-gray-800 mb-2">0 ETH</div>
+            <div className="font-bold mb-2 text-3xl text-gray-800">0 ETH</div>
             <p className="text-sm text-gray-500">总收入</p>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-xs mb-8">
-          <h2 className="text-lg font-medium text-gray-700 mb-4">快速操作</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex flex-col items-center justify-center">
+        <div className="bg-white rounded-lg shadow-xs mb-8 p-6">
+          <h2 className="font-medium text-lg mb-4 text-gray-700">快速操作</h2>
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+            <button className="border rounded-lg flex flex-col border-gray-200 p-4 transition-colors items-center justify-center hover:bg-gray-50">
               <svg
-                className="w-6 h-6 text-purple-600 mb-2"
+                className="h-6 mb-2 text-purple-600 w-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -129,13 +129,13 @@ export default function Dashboard() {
                   d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                 />
               </svg>
-              <span className="text-sm font-medium text-gray-700">
+              <span className="font-medium text-sm text-gray-700">
                 创建内容
               </span>
             </button>
-            <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex flex-col items-center justify-center">
+            <button className="border rounded-lg flex flex-col border-gray-200 p-4 transition-colors items-center justify-center hover:bg-gray-50">
               <svg
-                className="w-6 h-6 text-purple-600 mb-2"
+                className="h-6 mb-2 text-purple-600 w-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -154,13 +154,13 @@ export default function Dashboard() {
                   d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                 />
               </svg>
-              <span className="text-sm font-medium text-gray-700">
+              <span className="font-medium text-sm text-gray-700">
                 查看统计
               </span>
             </button>
-            <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex flex-col items-center justify-center">
+            <button className="border rounded-lg flex flex-col border-gray-200 p-4 transition-colors items-center justify-center hover:bg-gray-50">
               <svg
-                className="w-6 h-6 text-purple-600 mb-2"
+                className="h-6 mb-2 text-purple-600 w-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -173,13 +173,13 @@ export default function Dashboard() {
                   d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
                 />
               </svg>
-              <span className="text-sm font-medium text-gray-700">
+              <span className="font-medium text-sm text-gray-700">
                 管理粉丝
               </span>
             </button>
-            <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex flex-col items-center justify-center">
+            <button className="border rounded-lg flex flex-col border-gray-200 p-4 transition-colors items-center justify-center hover:bg-gray-50">
               <svg
-                className="w-6 h-6 text-purple-600 mb-2"
+                className="h-6 mb-2 text-purple-600 w-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -198,19 +198,19 @@ export default function Dashboard() {
                   d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                 />
               </svg>
-              <span className="text-sm font-medium text-gray-700">
+              <span className="font-medium text-sm text-gray-700">
                 账户设置
               </span>
             </button>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-xs">
-          <h2 className="text-lg font-medium text-gray-700 mb-4">钱包信息</h2>
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center mb-2">
+        <div className="bg-white rounded-lg shadow-xs p-6">
+          <h2 className="font-medium text-lg mb-4 text-gray-700">钱包信息</h2>
+          <div className="rounded-lg bg-gray-50 p-4">
+            <div className="flex mb-2 items-center">
               <svg
-                className="w-5 h-5 text-gray-500 mr-2"
+                className="h-5 mr-2 text-gray-500 w-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -223,12 +223,12 @@ export default function Dashboard() {
                   d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
                 />
               </svg>
-              <span className="text-sm font-medium text-gray-700">
+              <span className="font-medium text-sm text-gray-700">
                 钱包地址
               </span>
             </div>
-            <div className="bg-white p-3 rounded-sm border border-gray-200">
-              <p className="text-sm font-mono text-gray-600 break-all">
+            <div className="bg-white border rounded-sm border-gray-200 p-3">
+              <p className="font-mono text-sm text-gray-600 break-all">
                 {user.walletAddress || "未设置钱包地址"}
               </p>
             </div>

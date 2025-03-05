@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import DashboardLayout from "../(core)/dashboard-layout";
-import { fetchWithAuth } from "../_utils/api";
+import DashboardLayout from "@/(core)/dashboard-layout";
+import { fetchWithAuth } from "@/_utils/api";
 
 // 定义付费内容类型接口
 interface Post {

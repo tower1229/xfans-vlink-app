@@ -1,6 +1,6 @@
 "use client";
 
-import HomeLayout from "../(core)/home-layout";
+import HomeLayout from "@/(core)/home-layout";
 import Link from "next/link";
 import { useState } from "react";
 

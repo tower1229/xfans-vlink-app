@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "../_hooks/useAuth";
-import { fetchWithAuth } from "../_utils/api";
-import { userStore } from "../_stores";
+import { useAuth } from "@/_hooks/useAuth";
+import { fetchWithAuth } from "@/_utils/api";
+import { userStore } from "@/_stores";
 import { observer } from "mobx-react-lite";
 
 const SettingsPage = observer(() => {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import DashboardLayout from "../(core)/dashboard-layout";
+import DashboardLayout from "@/(core)/dashboard-layout";
 import OrderList from "./_components/OrderList";
 import OrderTabs from "./_components/OrderTabs";
 import OrderPagination from "./_components/OrderPagination";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import DashboardLayout from "../(core)/dashboard-layout";
+import DashboardLayout from "@/(core)/dashboard-layout";
 
 export default function Fans() {
   const [searchTerm, setSearchTerm] = useState("");
