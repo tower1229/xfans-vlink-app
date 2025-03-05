@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import { ValidationError } from "../../_utils/errors";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { cacheUtils } from "./redis.mjs";
 
 // JWT密钥，应该从环境变量中获取
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key_here"; // 使用固定的密钥，确保与客户端使用的密钥一致
@@ -470,6 +471,9 @@ export async function updateUser(userId, userData) {
       },
     });
 
+    // 清除用户缓存
+    await cacheUtils.del(`user:${userId}`);
+
     // 转换为与旧代码兼容的格式
     return {
       id: updatedUser.id,
@@ -499,6 +503,9 @@ export async function deleteUser(userId) {
         id: userId,
       },
     });
+
+    // 清除用户缓存
+    await cacheUtils.del(`user:${userId}`);
 
     return !!deletedUser;
   } catch (error) {

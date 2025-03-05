@@ -27,6 +27,7 @@ import {
   UnauthorizedError,
 } from "../middleware/errorHandler";
 import { validateData, createServerErrorResponse } from "../utils/validation";
+import { redis, cacheUtils } from "../utils/redis.mjs";
 
 /**
  * 用户注册
@@ -213,7 +214,7 @@ export async function logoutController(request, data) {
 }
 
 /**
- * 获取当前用户信息控制器
+ * 获取当前用户信息
  * @param {Request} request 请求对象
  * @returns {Promise<Response>} 响应对象
  */
@@ -231,7 +232,20 @@ export async function getCurrentUserController(request) {
       throw new UnauthorizedError("无效的用户信息");
     }
 
-    // 获取完整的用户信息
+    // 尝试从缓存获取用户信息
+    const cacheKey = `user:${user.userId}`;
+    const cachedUser = await cacheUtils.get(cacheKey);
+
+    if (cachedUser) {
+      console.log("从缓存获取到用户信息");
+      return NextResponse.json({
+        success: true,
+        data: cachedUser,
+        fromCache: true,
+      });
+    }
+
+    // 缓存未命中，从数据库获取完整的用户信息
     console.log("尝试获取用户ID为", user.userId, "的完整用户信息");
     const userInfo = await getUserById(user.userId);
     if (!userInfo) {
@@ -240,18 +254,24 @@ export async function getCurrentUserController(request) {
     }
     console.log("获取到的用户信息:", userInfo);
 
+    // 构建响应数据
+    const userData = {
+      id: userInfo.id,
+      username: userInfo.username,
+      email: userInfo.email,
+      walletAddress: userInfo.wallet_address,
+      role: userInfo.role,
+      createdAt: userInfo.created_at,
+      updatedAt: userInfo.updated_at,
+    };
+
+    // 将用户信息存入缓存，有效期30分钟
+    await cacheUtils.set(cacheKey, userData, 1800);
+
     // 返回用户信息
     const response = {
       success: true,
-      data: {
-        id: userInfo.id,
-        username: userInfo.username,
-        email: userInfo.email,
-        walletAddress: userInfo.wallet_address,
-        role: userInfo.role,
-        createdAt: userInfo.created_at,
-        updatedAt: userInfo.updated_at,
-      },
+      data: userData,
     };
     console.log("返回的响应:", response);
     return NextResponse.json(response);

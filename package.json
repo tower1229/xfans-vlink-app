@@ -8,7 +8,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "event-listener": "node scripts/eventListener.mjs"
+    "event-listener": "node scripts/eventListener.mjs",
+    "prisma:generate": "prisma generate --schema=./app/api/prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema=./app/api/prisma/schema.prisma",
+    "prisma:studio": "prisma studio --schema=./app/api/prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",

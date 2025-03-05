@@ -15,6 +15,27 @@ redis.on('connect', () => console.log('Redis 连接成功'));
 redis.on('reconnecting', () => console.log('Redis 正在重新连接...'));
 redis.on('ready', () => console.log('Redis 准备就绪'));
 
+// 确保 Redis 客户端已连接
+let isConnected = false;
+const connectRedis = async () => {
+    if (!isConnected) {
+        try {
+            await redis.connect();
+            isConnected = true;
+        } catch (error) {
+            if (error.message !== 'Connection already established') {
+                console.error('Redis 连接失败:', error);
+                throw error;
+            } else {
+                isConnected = true;
+            }
+        }
+    }
+};
+
+// 初始化连接
+connectRedis().catch(console.error);
+
 // 包装常用的 Redis 操作
 export const cacheUtils = {
     /**
@@ -25,6 +46,7 @@ export const cacheUtils = {
      */
     async set(key, value, ttl = 60) {
         try {
+            await connectRedis();
             const stringValue = JSON.stringify(value);
             if (ttl) {
                 await redis.setEx(key, ttl, stringValue);
@@ -46,6 +68,7 @@ export const cacheUtils = {
      */
     async get(key) {
         try {
+            await connectRedis();
             const value = await redis.get(key);
             return value ? JSON.parse(value) : null;
         } catch (error) {
@@ -63,6 +86,7 @@ export const cacheUtils = {
      */
     async del(key) {
         try {
+            await connectRedis();
             await redis.del(key);
         } catch (error) {
             console.error("删除缓存失败:", error);
@@ -125,8 +149,5 @@ export const cacheUtils = {
     },
 };
 
-// 连接 Redis
-await redis.connect();
-
-// 导出 Redis 实例
+// 导出 Redis 客户端
 export { redis };
