@@ -1,10 +1,8 @@
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
 import { db } from "../lib/db";
 import { v4 as uuidv4 } from "uuid";
 import { ValidationError } from "../../_utils/errors";
 import { SignJWT, jwtVerify } from "jose";
-import { cookies } from "next/headers";
 import { cacheUtils } from "./redis.mjs";
 
 // JWT密钥，应该从环境变量中获取
@@ -113,7 +111,6 @@ export async function getUserByUsername(username) {
         username: true,
         email: true,
         password: true,
-        walletAddress: true,
         role: true,
         createdAt: true,
         updatedAt: true,
@@ -128,7 +125,6 @@ export async function getUserByUsername(username) {
       username: user.username,
       email: user.email,
       password_hash: user.password,
-      wallet_address: user.walletAddress,
       role: user.role,
       created_at: user.createdAt,
       updated_at: user.updatedAt,
@@ -288,25 +284,40 @@ export async function verifyPassword(password, passwordHash) {
  * @returns {Object} 包含访问令牌和刷新令牌的对象
  */
 export async function generateTokens(user) {
-  // 创建访问令牌，使用 jose 库
-  const accessToken = await new SignJWT({
-    userId: user.id,
-    username: user.username,
-    role: user.role,
-    walletAddress: user.wallet_address,
-  })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime(JWT_EXPIRES_IN)
-    .sign(new TextEncoder().encode(JWT_SECRET));
+  try {
+    if (!user || !user.id) {
+      throw new Error("无效的用户对象");
+    }
 
-  // 创建刷新令牌
-  const refreshToken = crypto.randomBytes(40).toString("hex");
+    // 准备JWT载荷
+    const payload = {
+      userId: user.id,
+      username: user.username,
+      role: user.role,
+    };
 
-  return {
-    accessToken,
-    refreshToken,
-  };
+    // 生成访问令牌
+    const accessToken = await new SignJWT(payload)
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime(JWT_EXPIRES_IN)
+      .sign(new TextEncoder().encode(JWT_SECRET));
+
+    // 生成刷新令牌
+    const refreshToken = await new SignJWT(payload)
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime(REFRESH_TOKEN_EXPIRES_IN)
+      .sign(new TextEncoder().encode(JWT_SECRET));
+
+    return {
+      accessToken,
+      refreshToken,
+    };
+  } catch (error) {
+    console.error("生成令牌失败:", error);
+    throw error;
+  }
 }
 
 /**

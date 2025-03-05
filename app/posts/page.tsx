@@ -2,31 +2,7 @@
 
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/(core)/dashboard-layout";
-import { fetchWithAuth } from "@/_utils/api";
-
-// 定义付费内容类型接口
-interface Post {
-  id: string;
-  title: string;
-  image: string;
-  price: string;
-  tokenAddress: string;
-  chainId: number;
-  ownerAddress: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-// 定义表单数据类型接口
-interface FormData {
-  id?: string;
-  title: string;
-  image: string;
-  price: string;
-  tokenAddress: string;
-  chainId: string | number;
-  ownerAddress: string;
-}
+import { Post, PostFormData, fetchPosts, createPost, updatePost, deletePost } from "@/_actions/postActions";
 
 export default function Posts() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -36,7 +12,7 @@ export default function Posts() {
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
   const [currentPost, setCurrentPost] = useState<Post | null>(null);
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<PostFormData>({
     title: "",
     image: "",
     price: "",
@@ -47,20 +23,14 @@ export default function Posts() {
 
   // 获取所有付费内容
   useEffect(() => {
-    fetchPosts();
+    loadPosts();
   }, []);
 
-  const fetchPosts = async () => {
+  const loadPosts = async () => {
     try {
       setLoading(true);
-      const response = await fetchWithAuth("/api/v1/posts");
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error?.message || "获取付费内容失败");
-      }
-
-      setPosts(data.data);
+      const data = await fetchPosts();
+      setPosts(data);
     } catch (err: any) {
       setError(err.message);
       console.error("获取付费内容失败:", err);
@@ -73,46 +43,10 @@ export default function Posts() {
   const handleCreate = async () => {
     try {
       console.log("准备创建付费内容，表单数据:", formData);
-
-      // 验证必填字段
-      if (
-        !formData.title ||
-        !formData.image ||
-        !formData.price ||
-        !formData.tokenAddress ||
-        !formData.chainId
-      ) {
-        setError("请填写所有必填字段");
-        return;
-      }
-
-      // 验证chainId是否为数字
-      const chainId = Number(formData.chainId);
-      if (isNaN(chainId) || chainId <= 0) {
-        setError("链ID必须是有效的正整数");
-        return;
-      }
-
-      const response = await fetchWithAuth("/api/v1/posts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...formData,
-          chainId: chainId,
-        }),
-      });
-
-      const data = await response.json();
-      console.log("创建付费内容响应:", data);
-
-      if (!data.success) {
-        throw new Error(data.error?.message || "创建付费内容失败");
-      }
+      await createPost(formData);
 
       // 重新获取付费内容列表
-      await fetchPosts();
+      await loadPosts();
 
       // 关闭模态框并重置表单
       setShowCreateModal(false);
@@ -126,19 +60,14 @@ export default function Posts() {
   // 更新付费内容
   const handleUpdate = async () => {
     try {
-      const response = await fetchWithAuth(`/api/v1/posts/${currentPost?.id}`, {
-        method: "PUT",
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error?.message || "更新付费内容失败");
+      if (!currentPost?.id) {
+        throw new Error("无效的付费内容ID");
       }
 
+      await updatePost(currentPost.id, formData);
+
       // 重新获取付费内容列表
-      await fetchPosts();
+      await loadPosts();
 
       // 关闭模态框并重置表单
       setShowEditModal(false);
@@ -156,18 +85,10 @@ export default function Posts() {
     }
 
     try {
-      const response = await fetchWithAuth(`/api/v1/posts/${postId}`, {
-        method: "DELETE",
-      });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error?.message || "删除付费内容失败");
-      }
+      await deletePost(postId);
 
       // 重新获取付费内容列表
-      await fetchPosts();
+      await loadPosts();
     } catch (err: any) {
       setError(err.message);
       console.error("删除付费内容失败:", err);

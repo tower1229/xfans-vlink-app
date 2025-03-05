@@ -78,43 +78,58 @@ export async function registerController(request, data) {
  * @returns {Promise<Response>} 响应对象
  */
 export async function loginController(request, data) {
-  const { username, password } = data;
+  try {
+    const { username, password } = data;
 
-  // 获取用户
-  const user = await getUserByUsername(username);
-  if (!user) {
-    throw new NotFoundError("用户不存在");
-  }
+    if (!username || !password) {
+      throw new ValidationError("用户名和密码不能为空");
+    }
 
-  // 验证密码
-  const isPasswordValid = await verifyPassword(password, user.password_hash);
-  if (!isPasswordValid) {
-    throw new UnauthorizedError("密码错误");
-  }
+    // 获取用户
+    const user = await getUserByUsername(username);
+    if (!user) {
+      throw new NotFoundError("用户不存在");
+    }
 
-  // 生成令牌
-  const { accessToken, refreshToken } = await generateTokens(user);
+    // 验证密码
+    const isPasswordValid = await verifyPassword(password, user.password_hash);
+    if (!isPasswordValid) {
+      throw new UnauthorizedError("密码错误");
+    }
 
-  // 保存刷新令牌
-  await saveRefreshToken(user.id, refreshToken);
+    // 生成令牌
+    const { accessToken, refreshToken } = await generateTokens(user);
 
-  // 返回用户信息和令牌
-  return NextResponse.json({
-    success: true,
-    data: {
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        walletAddress: user.wallet_address,
-        role: user.role,
+    // 保存刷新令牌
+    await saveRefreshToken(user.id, refreshToken);
+
+    // 返回用户信息和令牌
+    return NextResponse.json({
+      success: true,
+      data: {
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+        },
+        tokens: {
+          accessToken,
+          refreshToken,
+        },
       },
-      tokens: {
-        accessToken,
-        refreshToken,
-      },
-    },
-  });
+    });
+  } catch (error) {
+    console.error("登录失败:", error);
+    if (
+      error instanceof ValidationError ||
+      error instanceof NotFoundError ||
+      error instanceof UnauthorizedError
+    ) {
+      throw error;
+    }
+    throw new Error("登录失败，请稍后重试");
+  }
 }
 
 /**

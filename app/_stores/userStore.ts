@@ -1,16 +1,7 @@
 "use client";
 
 import { makeAutoObservable, runInAction } from "mobx";
-
-// 用户类型定义
-interface User {
-  id: number;
-  username: string;
-  email?: string;
-  walletAddress?: string;
-  role: string;
-  userId?: string; // 添加可能存在的 userId 字段
-}
+import { fetchUserInfo, User } from "@/_actions/authActions";
 
 class UserStore {
   user: User | null = null;
@@ -67,30 +58,14 @@ class UserStore {
         }
 
         console.log("Fetching user info from API...");
-        const response = await fetch("/api/v1/users/me", {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+        const { data } = await fetchUserInfo();
+
+        runInAction(() => {
+          this.user = data;
+          // 保存用户信息到 localStorage
+          localStorage.setItem("user", JSON.stringify(data));
+          this.initialized = true;
         });
-
-        if (response.ok) {
-          const data = await response.json();
-
-          runInAction(() => {
-            this.user = data.data;
-            // 保存用户信息到 localStorage
-            localStorage.setItem("user", JSON.stringify(data.data));
-            this.initialized = true;
-          });
-        } else {
-          // 如果获取用户信息失败，可能是 token 过期
-          // 这里可以添加刷新 token 的逻辑，或者清除用户状态
-          runInAction(() => {
-            this.user = null;
-            this.error = "Failed to fetch user data";
-            this.initialized = true;
-          });
-        }
       } catch (error) {
         runInAction(() => {
           this.error = error instanceof Error ? error.message : "Unknown error";

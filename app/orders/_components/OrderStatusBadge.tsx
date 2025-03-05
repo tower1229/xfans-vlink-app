@@ -1,5 +1,5 @@
 import React from "react";
-import { OrderStatus, OrderStatusMap } from "../_lib/orderUtils";
+import { OrderStatus, OrderStatusMap } from "@/_utils/orderUtils";
 
 interface OrderStatusBadgeProps {
   status: number;

@@ -8,19 +8,15 @@ import {
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { fetchWithAuth } from "@/_utils/api";
 import { userStore } from "@/_stores";
 import { observer } from "mobx-react-lite";
-
-// 定义用户类型
-interface User {
-  id: number;
-  username: string;
-  email?: string;
-  walletAddress?: string;
-  role: string;
-  userId?: string;
-}
+import {
+  User,
+  login as loginAction,
+  logout as logoutAction,
+  refreshToken as refreshTokenAction,
+  register as registerAction,
+} from "@/_actions/authActions";
 
 // 定义认证上下文类型
 interface AuthContextType {
@@ -121,27 +117,14 @@ export const AuthProvider = observer(
       password: string
     ): Promise<boolean> => {
       try {
-        const response = await fetch("/api/v1/auth/login", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ username, password }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "登录失败");
-        }
-
-        const data = await response.json();
+        const { data } = await loginAction(username, password);
 
         // 保存令牌到本地存储
-        setLocalStorageItem("accessToken", data.data.tokens.accessToken);
-        setLocalStorageItem("refreshToken", data.data.tokens.refreshToken);
+        setLocalStorageItem("accessToken", data.tokens.accessToken);
+        setLocalStorageItem("refreshToken", data.tokens.refreshToken);
 
         // 使用 MobX store 设置用户信息
-        userStore.setUser(data.data.user);
+        userStore.setUser(data.user);
         console.log("Login: User set in store");
 
         // 标记用户信息已加载
@@ -160,13 +143,7 @@ export const AuthProvider = observer(
         const refreshToken = getLocalStorageItem("refreshToken");
 
         if (refreshToken) {
-          await fetch("/api/v1/auth/logout", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ refreshToken }),
-          });
+          await logoutAction(refreshToken);
         }
       } catch (error) {
         console.error("登出失败:", error);
@@ -186,27 +163,15 @@ export const AuthProvider = observer(
     // 刷新令牌函数
     const refreshToken = async (): Promise<boolean> => {
       try {
-        const refreshToken = getLocalStorageItem("refreshToken");
-        if (!refreshToken) {
+        const currentRefreshToken = getLocalStorageItem("refreshToken");
+        if (!currentRefreshToken) {
           return false;
         }
 
-        const response = await fetch("/api/v1/auth/refresh-token", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ refreshToken }),
-        });
-
-        if (!response.ok) {
-          return false;
-        }
-
-        const data = await response.json();
+        const { data } = await refreshTokenAction(currentRefreshToken);
 
         // 更新访问令牌
-        setLocalStorageItem("accessToken", data.data.accessToken);
+        setLocalStorageItem("accessToken", data.accessToken);
         return true;
       } catch (error) {
         console.error("刷新令牌失败:", error);
@@ -221,19 +186,7 @@ export const AuthProvider = observer(
       password: string
     ): Promise<boolean> => {
       try {
-        const response = await fetch("/api/v1/auth/register", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ username, walletAddress, password }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "注册失败");
-        }
-
+        await registerAction(username, walletAddress, password);
         return true;
       } catch (error) {
         console.error("注册失败:", error);

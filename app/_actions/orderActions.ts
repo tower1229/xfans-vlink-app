@@ -1,6 +1,12 @@
 import { fetchWithAuth } from "@/_utils/api";
 import { ApiOrder, OrdersResponse, PaginationInfo } from "@/_types/order";
 
+interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data: T;
+}
+
 /**
  * 获取订单列表
  * @param status 订单状态
@@ -22,13 +28,7 @@ export const fetchOrders = async (
       url += `&status=${status}`;
     }
 
-    const response = await fetchWithAuth(url);
-
-    if (!response.ok) {
-      throw new Error(`Error fetching orders: ${response.status}`);
-    }
-
-    const data = (await response.json()) as OrdersResponse;
+    const data = await fetchWithAuth<OrdersResponse>(url);
 
     if (data.success) {
       return {
@@ -58,16 +58,14 @@ export const closeOrder = async (orderId: string): Promise<boolean> => {
   try {
     const payload = { status: 2 }; // 2 表示已关闭状态
 
-    const response = await fetchWithAuth(`/api/v1/orders/${orderId}/status`, {
-      method: "PUT",
-      body: JSON.stringify(payload),
-    });
+    const data = await fetchWithAuth<ApiResponse<{ success: boolean }>>(
+      `/api/v1/orders/${orderId}/status`,
+      {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      }
+    );
 
-    if (!response.ok) {
-      throw new Error(`Error updating order: ${response.status}`);
-    }
-
-    const data = await response.json();
     return data.success;
   } catch (err) {
     console.error("Error closing order:", err);
@@ -88,7 +86,11 @@ export const exportOrders = async (status: string = "all"): Promise<Blob> => {
       url += `?status=${status}`;
     }
 
-    const response = await fetchWithAuth(url);
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      },
+    });
 
     if (!response.ok) {
       throw new Error(`Error exporting orders: ${response.status}`);

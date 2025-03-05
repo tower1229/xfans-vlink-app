@@ -6,9 +6,9 @@ import DashboardLayout from "@/(core)/dashboard-layout";
 import OrderList from "./_components/OrderList";
 import OrderTabs from "./_components/OrderTabs";
 import OrderPagination from "./_components/OrderPagination";
-import { fetchOrders, closeOrder } from "./_lib/orderActions";
+import { fetchOrders, closeOrder } from "@/_actions/orderActions";
 import { ApiOrder, PaginationInfo } from "@/_types/order";
-import { OrderStatus } from "./_lib/orderUtils";
+import { OrderStatus } from "@/_utils/orderUtils";
 
 export default function Orders() {
   const [activeTab, setActiveTab] = useState<0 | 1 | 2 | 3 | 4 | "all">("all");
