@@ -3,6 +3,11 @@ description: 本文档定义了项目的目录结构规范，确保代码组织�
 globs: app/**/*
 alwaysApply: false
 ---
+---
+description: 本文档定义了项目的目录结构规范，确保代码组织的一致性和可维护性。
+globs: app/**/*
+alwaysApply: false
+---
 # 目录结构规范
 
 > 本文档定义了项目的目录结构规范，确保代码组织的一致性和可维护性。

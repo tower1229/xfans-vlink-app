@@ -1,5 +1,10 @@
 ---
 description: 电子商务系统安全最佳实践，确保系统和用户数据的安全性。
+globs:  app/**/*
+alwaysApply: false
+---
+---
+description: 电子商务系统安全最佳实践，确保系统和用户数据的安全性。
 globs: app/**/*
 alwaysApply: false
 ---

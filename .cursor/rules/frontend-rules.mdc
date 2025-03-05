@@ -3,6 +3,11 @@ description: 电子商务系统前端开发最佳实践，确保用户体验、�
 globs: app/_components/**/*, app/_utils/**/*, app/_hooks/**/*, app/_lib/**/*, app/_providers/**/*, app/**/*.tsx
 alwaysApply: false
 ---
+---
+description: 电子商务系统前端开发最佳实践，确保用户体验、性能和可维护性。
+globs: app/_components/**/*, app/_utils/**/*, app/_hooks/**/*, app/_lib/**/*, app/_providers/**/*, app/**/*.tsx
+alwaysApply: false
+---
 
 # 电子商务前端开发最佳实践
 
