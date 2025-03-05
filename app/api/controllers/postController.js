@@ -6,14 +6,13 @@ import {
   updatePost,
   deletePost,
   getPostsByOwner,
-} from "@/utils";
-import { NotFoundError, UnauthorizedError } from "../middleware/errorHandler";
-import { verifyJwtToken } from "../../utils/userUtils";
+} from "../utils/postUtils";
+import { verifyJwtToken } from "../utils/userUtils";
 import {
   validateData,
-  createServerErrorResponse,
+  createErrorResponse,
   createSuccessResponse,
-} from "../../utils";
+} from "../utils/validation";
 
 /**
  * 获取所有付费内容
@@ -22,7 +21,7 @@ import {
  */
 export async function getAllPostsController(request) {
   // 从令牌中获取用户信息
-  const user = verifyJwtToken(request.token);
+  const user = await verifyJwtToken(request.token);
 
   // 获取当前用户的付费内容
   const posts = await getPostsByOwner(user.walletAddress);
@@ -52,7 +51,7 @@ export async function getAllPostsController(request) {
  */
 export async function getPostByIdController(request, postId) {
   // 从令牌中获取用户信息
-  const user = verifyJwtToken(request.token);
+  const user = await verifyJwtToken(request.token);
 
   // 获取付费内容
   const post = await getPostById(postId);
@@ -92,7 +91,7 @@ export async function getPostByIdController(request, postId) {
  */
 export async function createPostController(request, data) {
   // 从令牌中获取用户信息
-  const user = verifyJwtToken(request.token);
+  const user = await verifyJwtToken(request.token);
 
   // 创建付费内容
   const post = await createPost({
@@ -134,7 +133,7 @@ export async function createPostController(request, data) {
  */
 export async function updatePostController(request, postId, data) {
   // 从令牌中获取用户信息
-  const user = verifyJwtToken(request.token);
+  const user = await verifyJwtToken(request.token);
 
   // 检查付费内容是否存在
   const existingPost = await getPostById(postId);
@@ -202,7 +201,7 @@ export async function deletePostController(request, postId) {
     console.log(`尝试删除付费内容: ${postId}`);
 
     // 从令牌中获取用户信息
-    const user = verifyJwtToken(request.token);
+    const user = await verifyJwtToken(request.token);
 
     // 检查付费内容是否存在
     const existingPost = await getPostById(postId);

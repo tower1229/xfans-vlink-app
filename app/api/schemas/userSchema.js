@@ -62,3 +62,43 @@ export const updateUserSchema = z.object({
     .refine((val) => !val || isAddress(val), "请输入有效的钱包地址")
     .optional(),
 });
+
+/**
+ * 用户设置验证模式
+ */
+export const userSettingsSchema = z
+  .object({
+    username: z
+      .string()
+      .min(3, "用户名至少需要3个字符")
+      .max(50, "用户名最多50个字符")
+      .optional(),
+    email: z.string().email("请输入有效的邮箱地址").optional(),
+    password: z
+      .string()
+      .min(6, "密码至少需要6个字符")
+      .max(100, "密码最多100个字符")
+      .optional(),
+    currentPassword: z
+      .string()
+      .min(6, "当前密码至少需要6个字符")
+      .max(100, "当前密码最多100个字符")
+      .optional(),
+    walletAddress: z
+      .string()
+      .refine((val) => !val || isAddress(val), "请输入有效的钱包地址")
+      .optional(),
+  })
+  .refine(
+    (data) => {
+      // 如果要更改密码，必须提供当前密码
+      if (data.password && !data.currentPassword) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: "更改密码时必须提供当前密码",
+      path: ["currentPassword"],
+    }
+  );

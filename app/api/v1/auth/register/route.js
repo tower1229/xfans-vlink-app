@@ -3,7 +3,7 @@ import { registerController } from "../../../controllers";
 import { registerSchema } from "../../../schemas";
 import { validateData } from "../../../utils/validation";
 import { withAPI } from "../../../middleware";
-import { ValidationError } from "../../../middleware/errorHandler";
+import { ValidationError } from "../../../../_utils/errors";
 
 /**
  * 用户注册API

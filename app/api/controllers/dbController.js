@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { initializeDatabase } from "../../utils";
+import { initializeDatabase } from "../utils";
 
 /**
  * 初始化数据库

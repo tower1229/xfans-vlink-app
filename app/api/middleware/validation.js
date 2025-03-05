@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ValidationError } from "./errorHandler";
+import { ValidationError } from "../../_utils/errors";
 
 /**
  * 请求验证中间件

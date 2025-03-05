@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import DashboardLayout from "../dashboard-layout";
+import DashboardLayout from "../(core)/dashboard-layout";
 
 export default function Fans() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -110,35 +110,35 @@ export default function Fans() {
   return (
     <DashboardLayout>
       <div className="bg-white rounded-lg shadow-sm">
-        <div className="p-6 border-b border-gray-200">
+        <div className="border-b border-gray-200 p-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div className="mb-4 md:mb-0">
-              <h3 className="text-lg font-medium text-gray-800">
+              <h3 className="font-medium text-lg text-gray-800">
                 Fans Management
               </h3>
               <p className="text-sm text-gray-500">
                 {filteredFans.length} fans total
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Search fans..."
-                  className="w-full sm:w-64 px-4 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                  className="border rounded-md border-gray-300 w-full py-2 px-4 sm:w-64 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 {searchTerm && (
                   <button
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="transform top-1/2 right-3 text-gray-400 -translate-y-1/2 absolute hover:text-gray-600"
                     onClick={() => setSearchTerm("")}
                   >
                     ✕
                   </button>
                 )}
               </div>
-              <button className="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">
+              <button className="rounded-md bg-blue-600 text-white py-2 px-4 hover:bg-blue-700">
                 Add New Fan
               </button>
             </div>
@@ -146,57 +146,57 @@ export default function Fans() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="divide-y min-w-full divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="font-medium text-left text-xs tracking-wider py-3 px-6 text-gray-500 uppercase">
                   Name
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="font-medium text-left text-xs tracking-wider py-3 px-6 text-gray-500 uppercase">
                   Email
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="font-medium text-left text-xs tracking-wider py-3 px-6 text-gray-500 uppercase">
                   Join Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="font-medium text-left text-xs tracking-wider py-3 px-6 text-gray-500 uppercase">
                   Total Spent
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="font-medium text-left text-xs tracking-wider py-3 px-6 text-gray-500 uppercase">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="font-medium text-left text-xs tracking-wider py-3 px-6 text-gray-500 uppercase">
                   Tier
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="font-medium text-left text-xs tracking-wider py-3 px-6 text-gray-500 uppercase">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y bg-white divide-gray-200">
               {filteredFans.map((fan) => (
                 <tr key={fan.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="py-4 px-6 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="h-10 w-10 shrink-0 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+                      <div className="rounded-full flex bg-gray-200 h-10 text-gray-500 w-10 items-center justify-center shrink-0">
                         {fan.name.charAt(0)}
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="font-medium text-sm text-gray-900">
                           {fan.name}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="text-sm py-4 px-6 text-gray-500 whitespace-nowrap">
                     {fan.email}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="text-sm py-4 px-6 text-gray-500 whitespace-nowrap">
                     {fan.joinDate}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="font-medium text-sm py-4 px-6 text-gray-900 whitespace-nowrap">
                     {fan.totalSpent}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="py-4 px-6 whitespace-nowrap">
                     <span
                       className={`px-2 py-1 text-xs rounded-full ${getStatusBadge(
                         fan.status
@@ -205,7 +205,7 @@ export default function Fans() {
                       {fan.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="py-4 px-6 whitespace-nowrap">
                     <span
                       className={`px-2 py-1 text-xs rounded-full ${getTierBadge(
                         fan.tier
@@ -214,7 +214,7 @@ export default function Fans() {
                       {fan.tier}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="text-sm py-4 px-6 text-gray-500 whitespace-nowrap">
                     <div className="flex space-x-2">
                       <button className="text-blue-600 hover:text-blue-800">
                         View
@@ -233,17 +233,17 @@ export default function Fans() {
           </table>
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-200">
+        <div className="border-t border-gray-200 py-4 px-6">
           <div className="flex justify-between items-center">
             <div className="text-sm text-gray-500">
               Showing <span className="font-medium">{filteredFans.length}</span>{" "}
               of <span className="font-medium">{fansData.length}</span> fans
             </div>
             <div className="flex space-x-2">
-              <button className="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">
+              <button className="border rounded-md border-gray-300 text-sm py-1 px-3 text-gray-700 hover:bg-gray-50">
                 Previous
               </button>
-              <button className="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">
+              <button className="border rounded-md border-gray-300 text-sm py-1 px-3 text-gray-700 hover:bg-gray-50">
                 Next
               </button>
             </div>

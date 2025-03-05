@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { UnauthorizedError } from "./errorHandler";
-import { verifyJwtToken } from "../../utils/userUtils";
+import { verifyJwtToken } from "../utils/userUtils";
+import { UnauthorizedError } from "../../_utils/errors";
 
 /**
  * 从请求中获取令牌
@@ -44,13 +44,13 @@ export async function withAuth(request, next) {
     throw new UnauthorizedError("需要身份验证");
   }
 
-  const user = verifyJwtToken(token);
+  const user = await verifyJwtToken(token);
   if (!user) {
     console.log("令牌验证失败，抛出未授权错误");
     throw new UnauthorizedError("无效的身份验证令牌");
   }
 
-  // 创建新的请求对象，并将令牌添加到请求对象
+  // 创建新的请求对象，并将令牌和用户信息添加到请求对象
   const clonedRequest = request.clone();
   console.log("已克隆请求对象");
 
@@ -62,6 +62,15 @@ export async function withAuth(request, next) {
     configurable: true,
   });
   console.log("已将令牌添加到请求对象");
+
+  // 使用Object.defineProperty确保user属性被正确添加
+  Object.defineProperty(clonedRequest, "user", {
+    value: user,
+    writable: false,
+    enumerable: true,
+    configurable: true,
+  });
+  console.log("已将用户信息添加到请求对象");
 
   // 调用下一个处理函数
   console.log("调用下一个处理函数");
@@ -83,22 +92,30 @@ export async function withAdminAuth(request, next) {
     throw new UnauthorizedError("需要身份验证");
   }
 
-  const user = verifyJwtToken(token);
+  const user = await verifyJwtToken(token);
   if (!user) {
     throw new UnauthorizedError("无效的身份验证令牌");
   }
 
   // 如果不是管理员，返回未授权错误
-  if (!user.role || user.role !== "admin") {
+  if (user.role !== "admin") {
     throw new UnauthorizedError("需要管理员权限");
   }
 
-  // 创建新的请求对象，并将令牌添加到请求对象
+  // 创建新的请求对象，并将令牌和用户信息添加到请求对象
   const clonedRequest = request.clone();
 
   // 使用Object.defineProperty确保token属性被正确添加
   Object.defineProperty(clonedRequest, "token", {
     value: token,
+    writable: false,
+    enumerable: true,
+    configurable: true,
+  });
+
+  // 使用Object.defineProperty确保user属性被正确添加
+  Object.defineProperty(clonedRequest, "user", {
+    value: user,
     writable: false,
     enumerable: true,
     configurable: true,
@@ -122,13 +139,26 @@ export async function withOptionalAuth(request, next) {
   const clonedRequest = request.clone();
 
   if (token) {
-    // 使用Object.defineProperty确保token属性被正确添加
-    Object.defineProperty(clonedRequest, "token", {
-      value: token,
-      writable: false,
-      enumerable: true,
-      configurable: true,
-    });
+    // 验证令牌
+    const user = await verifyJwtToken(token);
+
+    if (user) {
+      // 使用Object.defineProperty确保token属性被正确添加
+      Object.defineProperty(clonedRequest, "token", {
+        value: token,
+        writable: false,
+        enumerable: true,
+        configurable: true,
+      });
+
+      // 使用Object.defineProperty确保user属性被正确添加
+      Object.defineProperty(clonedRequest, "user", {
+        value: user,
+        writable: false,
+        enumerable: true,
+        configurable: true,
+      });
+    }
   }
 
   // 调用下一个处理函数

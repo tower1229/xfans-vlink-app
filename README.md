@@ -164,7 +164,7 @@ The frontend has been updated to include authentication tokens in API requests. 
 To make authenticated API requests in new components, import and use the `fetchWithAuth` utility:
 
 ```typescript
-import { fetchWithAuth } from "../utils/api";
+import { fetchWithAuth } from "../_utils/api";
 
 // Example GET request
 const response = await fetchWithAuth("/api/v1/protected-endpoint");

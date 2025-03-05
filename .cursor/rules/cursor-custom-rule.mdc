@@ -1,10 +1,60 @@
 ---
 description: This is an e-commerce system used in a real business environment. To solve the problem, we should not only consider the technical aspect, but also adopt the best practices generally recognized by the industry from the perspective of long-term business sustainability.
-globs: app/api/**
-alwaysApply: false
+globs: "app/**", "prisma/**"
+alwaysApply: true
+---
+---
+description: This is an e-commerce system used in a real business environment. To solve the problem, we should not only consider the technical aspect, but also adopt the best practices generally recognized by the industry from the perspective of long-term business sustainability.
+globs: ["app/**", "prisma/**"]
+alwaysApply: true
 ---
 
-# Your rule content
+# 电子商务系统开发最佳实践
 
-- You can @ files here
-- You can use markdown but dont have to
+## 架构原则
+- 采用模块化设计，确保各组件之间的低耦合高内聚
+- 遵循 DRY (Don't Repeat Yourself) 原则，避免代码重复
+- 实现关注点分离 (Separation of Concerns)，前后端逻辑清晰分离
+- 优先考虑可扩展性，为未来业务增长做好准备
+
+## 数据库设计
+- 设计合理的数据模型，确保实体关系清晰
+- 使用适当的索引优化查询性能
+- 实现数据完整性约束，保证数据一致性
+- 考虑分表分库策略，为大数据量做好准备
+
+## 安全最佳实践
+- 实现严格的输入验证和数据清洗
+- 防范 SQL 注入、XSS、CSRF 等常见安全威胁
+- 敏感数据加密存储，特别是用户密码和支付信息
+- 实现细粒度的权限控制系统
+
+## 性能优化
+- 实现适当的缓存策略，减少数据库负载
+- 优化前端资源加载，提高页面加载速度
+- 实现懒加载和按需加载策略
+- 考虑 CDN 分发静态资源
+
+## 用户体验
+- 设计直观的用户界面，降低学习成本
+- 实现响应式设计，适配不同设备
+- 优化结账流程，减少购物车放弃率
+- 提供清晰的错误提示和操作反馈
+
+## 业务逻辑
+- 实现灵活的产品分类和属性系统
+- 设计可扩展的促销和折扣机制
+- 支持多种支付方式和配送选项
+- 实现完善的订单管理和跟踪系统
+
+## 可维护性
+- 编写清晰的代码注释和文档
+- 遵循一致的代码风格和命名约定
+- 实现全面的日志记录和监控
+- 编写自动化测试，确保代码质量
+
+## 合规性
+- 遵循数据保护法规 (如 GDPR)
+- 实现明确的隐私政策和用户协议
+- 确保支付处理符合 PCI DSS 标准
+- 考虑不同地区的税务和法律要求

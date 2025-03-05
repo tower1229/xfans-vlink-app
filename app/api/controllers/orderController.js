@@ -6,25 +6,14 @@ import {
   getOrdersByUser,
   updateExpiredOrders,
   getAllOrders,
-  OrderError,
-} from "../../utils/orderUtils";
-import { getPostById } from "../../utils/postUtils";
-import {
-  NotFoundError,
-  ValidationError,
-  UnauthorizedError,
-} from "../middleware/errorHandler";
-import {
-  isAddress,
-  encodeFunctionData,
-  encodeAbiParameters,
-  parseAbiParameters,
-  keccak256,
-  toHex,
-} from "viem";
-import { signMessage } from "viem/accounts";
-import { verifyJwtToken, checkUserExists } from "../../utils/userUtils";
-import { redis } from "../../utils/redis";
+  OrderStatus,
+  OrderStatusMap,
+} from "../services/orderService";
+import { getPostById } from "../utils/postUtils";
+import { OrderError } from "../../_utils/errors";
+import { isAddress, keccak256, parseEther, formatEther } from "viem";
+import { verifyJwtToken, checkUserExists } from "../utils/userUtils";
+import { redis } from "../utils/redis.mjs";
 
 /**
  * 统一的响应格式化函数
@@ -47,7 +36,7 @@ export async function createOrderController(request, data) {
   try {
     const user = request.user; // 从认证中间件获取
 
-    if (!user?.walletAddress) {
+    if (!user?.userId) {
       return formatResponse(
         false,
         null,
@@ -57,7 +46,7 @@ export async function createOrderController(request, data) {
 
     const { productId, chainId } = data;
     const userAddress = user.walletAddress; // 使用当前用户的钱包地址
-    const userId = user.id; // JWT中的用户ID字段
+    const userId = user.userId; // JWT中的用户ID字段
 
     // 验证用户地址
     if (!isAddress(userAddress)) {
@@ -78,7 +67,7 @@ export async function createOrderController(request, data) {
 
     // 检查用户是否已有该商品的待支付订单
     console.log(`检查用户是否已有商品 ${productId} 的待支付订单`);
-    const existingOrders = await getOrdersByUser(userAddress, "pending");
+    const existingOrders = await getOrdersByUser(userId, "pending");
     const existingOrder = existingOrders.find(
       (order) => order.productId === productId
     );
@@ -357,7 +346,7 @@ export async function createOrderController(request, data) {
  */
 export async function getOrderByIdController(request, orderId) {
   // 从令牌中获取用户信息
-  const user = verifyJwtToken(request.token);
+  const user = await verifyJwtToken(request.token);
 
   // 获取订单信息
   const order = await getOrderById(orderId);
@@ -365,9 +354,9 @@ export async function getOrderByIdController(request, orderId) {
     throw new NotFoundError("订单不存在");
   }
 
-  // 检查是否是当前用户的订单
+  // 检查是否是当前用户的订单或卖家
   if (
-    order.userAddress !== user.walletAddress &&
+    order.userId !== user.userId &&
     order.ownerAddress !== user.walletAddress
   ) {
     throw new UnauthorizedError("您没有权限查看此订单");
@@ -379,6 +368,7 @@ export async function getOrderByIdController(request, orderId) {
     data: {
       id: order.id,
       productId: order.productId,
+      userId: order.userId,
       userAddress: order.userAddress,
       price: order.price.toString(),
       tokenAddress: order.tokenAddress,
@@ -454,28 +444,17 @@ export async function updateOrderStatusController(request, orderId, data) {
 /**
  * 获取用户订单列表
  * @param {Request} request 请求对象
- * @param {string} userAddress 用户地址
- * @param {Object} options 查询选项
- * @param {number} options.page 页码
- * @param {number} options.pageSize 每页数量
- * @param {string} options.status 订单状态
+ * @param {string} userId 用户ID
+ * @param {Object} options 分页选项
  * @returns {Promise<Response>} 响应对象
  */
-export async function getUserOrdersController(
-  request,
-  userAddress,
-  options = {}
-) {
+export async function getUserOrdersController(request, userId, options = {}) {
   try {
     const { page = 1, pageSize = 10, status } = options;
 
     // 参数验证
-    if (!userAddress) {
-      throw new ValidationError("用户地址不能为空", "MISSING_USER_ADDRESS");
-    }
-
-    if (!isAddress(userAddress)) {
-      throw new ValidationError("无效的用户地址", "INVALID_USER_ADDRESS");
+    if (!userId) {
+      throw new ValidationError("用户ID不能为空", "MISSING_USER_ID");
     }
 
     if (page < 1) {
@@ -487,7 +466,7 @@ export async function getUserOrdersController(
     }
 
     // 构建缓存键
-    const cacheKey = `orders:${userAddress}:${status}:${page}:${pageSize}`;
+    const cacheKey = `orders:${userId}:${status}:${page}:${pageSize}`;
 
     // 尝试从缓存获取数据
     const cachedData = await redis.get(cacheKey);
@@ -497,7 +476,7 @@ export async function getUserOrdersController(
     }
 
     // 检查请求频率
-    const rateLimitKey = `ratelimit:orders:${userAddress}`;
+    const rateLimitKey = `ratelimit:orders:${userId}`;
     const requestCount = await redis.incr(rateLimitKey);
     if (requestCount === 1) {
       await redis.expire(rateLimitKey, 60); // 60秒过期
@@ -514,7 +493,7 @@ export async function getUserOrdersController(
     const skip = (page - 1) * pageSize;
 
     // 获取用户订单
-    const { orders, total } = await getOrdersByUser(userAddress, status, {
+    const { orders, total } = await getOrdersByUser(userId, status, {
       skip,
       limit: pageSize,
     });
@@ -527,62 +506,58 @@ export async function getUserOrdersController(
       totalItems: total,
     };
 
-    // 缓存结果（1分钟）
-    await redis.setex(cacheKey, 60, JSON.stringify(result));
+    // 缓存结果（10秒）
+    await redis.set(cacheKey, JSON.stringify(result), "EX", 10);
 
     return formatResponse(true, result);
   } catch (error) {
     console.error("获取用户订单列表失败:", error);
-
-    // 错误分类处理
-    if (error instanceof ValidationError) {
-      return formatResponse(false, null, error);
-    }
-
-    if (error.message.includes("请求过于频繁")) {
-      return formatResponse(false, null, {
-        message: error.message,
-        code: "RATE_LIMIT_EXCEEDED",
-      });
-    }
-
     return formatResponse(
       false,
       null,
       error instanceof OrderError
         ? error
-        : new OrderError("获取订单列表失败", "FETCH_ERROR")
+        : new OrderError(
+            `获取用户订单列表失败: ${error.message}`,
+            "FETCH_ORDERS_ERROR"
+          )
     );
   }
 }
 
 /**
- * 获取所有订单列表
+ * 获取所有订单
  * @param {Request} request 请求对象
+ * @param {Object} options 分页选项
  * @returns {Promise<Response>} 响应对象
  */
-export async function getAllOrdersController(request) {
+export async function getAllOrdersController(request, options = {}) {
   try {
     // 获取查询参数
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get("status");
-    const user = request.user; // 从认证中间件获取
-
-    if (!user?.walletAddress) {
-      return formatResponse(
-        false,
-        null,
-        new OrderError("未授权访问", "UNAUTHORIZED")
-      );
-    }
+    const { page = 1, pageSize = 10, status } = options;
 
     // 更新过期订单（不阻塞主流程）
     updateExpiredOrders().catch(console.error);
 
-    // 获取用户订单
-    const orders = await getOrdersByUser(user.walletAddress, status);
+    // 计算分页参数
+    const skip = (page - 1) * pageSize;
 
-    return formatResponse(true, orders);
+    // 获取所有订单
+    const { orders, total } = await getAllOrders({
+      skip,
+      limit: pageSize,
+      status,
+    });
+
+    const result = {
+      orders,
+      currentPage: page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+      totalItems: total,
+    };
+
+    return formatResponse(true, result);
   } catch (error) {
     console.error("获取订单列表失败:", error);
     return formatResponse(

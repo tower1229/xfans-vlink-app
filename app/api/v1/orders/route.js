@@ -5,10 +5,11 @@ import {
   getUserOrdersController,
 } from "../../controllers";
 import { createOrderSchema } from "../../schemas";
-import { validateData } from "../../utils/validation";
+import {
+  validateData,
+  createServerErrorResponse,
+} from "../../utils/validation";
 import { withAuthAPI } from "../../middleware";
-import { OrderError } from "../../../utils/orderUtils";
-import { createServerErrorResponse } from "../../../utils/validation";
 
 // 创建订单
 export const POST = withAuthAPI(async (request) => {
@@ -36,45 +37,70 @@ export const POST = withAuthAPI(async (request) => {
     return NextResponse.json({
       success: false,
       error: {
-        message: error instanceof OrderError ? error.message : "创建订单失败",
-        code: error instanceof OrderError ? error.code : "INTERNAL_ERROR",
+        message: "创建订单失败",
+        code: "INTERNAL_ERROR",
       },
     });
   }
 });
 
 // 获取订单列表
-export async function GET(request) {
+export const GET = withAuthAPI(async (request) => {
   try {
     // 从 URL 获取查询参数
     const { searchParams } = new URL(request.url);
-    const userAddress = searchParams.get("userAddress");
     const page = parseInt(searchParams.get("page") || "1");
     const pageSize = parseInt(searchParams.get("pageSize") || "10");
     const status = searchParams.get("status");
 
-    if (!userAddress) {
+    // 从认证中间件中获取用户信息
+    const user = request.user;
+
+    // 验证用户信息
+    if (!user || !user.userId) {
       return NextResponse.json(
-        { error: "userAddress is required" },
-        { status: 400 }
+        {
+          success: false,
+          error: {
+            message: "未授权访问",
+            code: "UNAUTHORIZED",
+          },
+        },
+        { status: 401 }
       );
     }
 
     // 验证分页参数
     if (isNaN(page) || page < 1 || isNaN(pageSize) || pageSize < 1) {
       return NextResponse.json(
-        { error: "Invalid pagination parameters" },
+        {
+          success: false,
+          error: {
+            message: "无效的分页参数",
+            code: "INVALID_PAGINATION",
+          },
+        },
         { status: 400 }
       );
     }
 
-    // 调用控制器
-    return await getUserOrdersController(request, userAddress, {
-      page,
-      pageSize,
-      status,
-    });
+    // 根据用户角色决定返回所有订单或仅用户自己的订单
+    if (user.role === "admin") {
+      // 管理员可以查看所有订单
+      return await getAllOrdersController(request, {
+        page,
+        pageSize,
+        status,
+      });
+    } else {
+      // 普通用户只能查看自己的订单
+      return await getUserOrdersController(request, user.userId, {
+        page,
+        pageSize,
+        status,
+      });
+    }
   } catch (error) {
     return createServerErrorResponse(error);
   }
-}
+});

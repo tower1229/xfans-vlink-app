@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { updateOrderStatusController } from "../../../../controllers";
-import { updateOrderStatusSchema } from "../../../../schemas";
+import { withAuthAPI } from "../../../../middleware";
 import {
   validateData,
-  createValidationErrorResponse,
   createServerErrorResponse,
 } from "../../../../utils/validation";
 import { verifySignature } from "../../../../middleware/eventListenerAuth";

@@ -1,4 +1,11 @@
 import { NextResponse } from "next/server";
+import {
+  AppError,
+  ValidationError,
+  NotFoundError,
+  UnauthorizedError,
+  ForbiddenError,
+} from "../../_utils/errors";
 
 /**
  * 统一错误处理中间件
@@ -19,18 +26,21 @@ export async function withErrorHandler(request, next) {
     let message = error.message || "服务器内部错误";
 
     // 根据错误类型设置不同的错误代码和状态码
-    if (error.name === "ValidationError") {
-      errorCode = "VALIDATION_ERROR";
-      statusCode = 400;
-    } else if (error.name === "NotFoundError") {
-      errorCode = "NOT_FOUND";
-      statusCode = 404;
-    } else if (error.name === "UnauthorizedError") {
-      errorCode = "UNAUTHORIZED";
-      statusCode = 401;
-    } else if (error.name === "ForbiddenError") {
-      errorCode = "FORBIDDEN";
-      statusCode = 403;
+    if (error instanceof AppError) {
+      errorCode = error.code;
+
+      // 根据错误类型设置状态码
+      if (error instanceof ValidationError) {
+        statusCode = 400;
+      } else if (error instanceof NotFoundError) {
+        statusCode = 404;
+      } else if (error instanceof UnauthorizedError) {
+        statusCode = 401;
+      } else if (error instanceof ForbiddenError) {
+        statusCode = 403;
+      } else {
+        statusCode = 500;
+      }
     }
 
     // 返回错误响应
@@ -47,78 +57,12 @@ export async function withErrorHandler(request, next) {
   }
 }
 
-/**
- * 自定义错误基类
- */
-class AppError extends Error {
-  constructor(message, statusCode, errorCode) {
-    super(message);
-    this.statusCode = statusCode;
-    this.errorCode = errorCode;
-    this.name = this.constructor.name;
-    Error.captureStackTrace(this, this.constructor);
-  }
-}
-
-/**
- * 验证错误
- */
-export class ValidationError extends AppError {
-  constructor(message) {
-    super(message, 400, "VALIDATION_ERROR");
-  }
-}
-
-/**
- * 未找到资源错误
- */
-export class NotFoundError extends AppError {
-  constructor(message) {
-    super(message, 404, "NOT_FOUND");
-  }
-}
-
-/**
- * 未授权错误
- */
-export class UnauthorizedError extends AppError {
-  constructor(message) {
-    super(message, 401, "UNAUTHORIZED");
-  }
-}
-
-/**
- * 禁止访问错误
- */
-export class ForbiddenError extends AppError {
-  constructor(message) {
-    super(message, 403, "FORBIDDEN");
-  }
-}
-
-/**
- * 冲突错误
- */
-export class ConflictError extends AppError {
-  constructor(message) {
-    super(message, 409, "CONFLICT");
-  }
-}
-
-/**
- * 服务器错误
- */
-export class ServerError extends AppError {
-  constructor(message) {
-    super(message, 500, "SERVER_ERROR");
-  }
-}
+// 导出错误类型，以便向后兼容
+export { ValidationError, NotFoundError, UnauthorizedError, ForbiddenError };
 
 export default {
   ValidationError,
   NotFoundError,
   UnauthorizedError,
   ForbiddenError,
-  ConflictError,
-  ServerError,
 };

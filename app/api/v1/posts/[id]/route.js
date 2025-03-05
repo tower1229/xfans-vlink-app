@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import {
-  getPostByIdController,
-  updatePostController,
-  deletePostController,
-} from "../../../controllers";
+  getPostById,
+  updatePost,
+  deletePost,
+} from "../../../controllers/postController";
 import { updatePostSchema } from "../../../schemas";
 import {
   validateData,
@@ -21,7 +21,7 @@ export async function GET(request, context) {
       const { id } = await context.params;
 
       // 调用控制器并传递ID
-      return await getPostByIdController(authenticatedRequest, id);
+      return await getPostById(authenticatedRequest, id);
     });
   } catch (error) {
     return createServerErrorResponse(error);
@@ -46,11 +46,7 @@ export async function PUT(request, context) {
       }
 
       // 调用控制器并传递ID和数据
-      return await updatePostController(
-        authenticatedRequest,
-        id,
-        validation.data
-      );
+      return await updatePost(authenticatedRequest, id, validation.data);
     });
   } catch (error) {
     return createServerErrorResponse(error);
@@ -66,7 +62,7 @@ export async function DELETE(request, context) {
       const { id } = await context.params;
 
       // 调用控制器并传递ID
-      return await deletePostController(authenticatedRequest, id);
+      return await deletePost(authenticatedRequest, id);
     });
   } catch (error) {
     return createServerErrorResponse(error);

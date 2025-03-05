@@ -1,27 +1,32 @@
 import { NextResponse } from "next/server";
 import {
   createUser,
+  getUserByEmail,
   getUserByUsername,
-  getUserById,
+  getUserByWalletAddress,
   verifyPassword,
   generateTokens,
   saveRefreshToken,
   verifyRefreshToken,
   deleteRefreshToken,
   updateUser,
+  getUserById,
   deleteUser,
   verifyJwtToken,
-} from "../../utils";
+} from "../utils/userUtils";
+import {
+  validateEmail,
+  validateUsername,
+  validatePassword,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../utils/validation";
 import {
   NotFoundError,
   ValidationError,
   UnauthorizedError,
 } from "../middleware/errorHandler";
-import {
-  validateData,
-  createServerErrorResponse,
-  createSuccessResponse,
-} from "../../utils";
+import { validateData, createServerErrorResponse } from "../utils/validation";
 
 /**
  * 用户注册
@@ -35,7 +40,7 @@ export async function registerController(request, data) {
     const user = await createUser(data);
 
     // 生成令牌
-    const { accessToken, refreshToken } = generateTokens(user);
+    const { accessToken, refreshToken } = await generateTokens(user);
 
     // 保存刷新令牌
     await saveRefreshToken(user.id, refreshToken);
@@ -87,7 +92,7 @@ export async function loginController(request, data) {
   }
 
   // 生成令牌
-  const { accessToken, refreshToken } = generateTokens(user);
+  const { accessToken, refreshToken } = await generateTokens(user);
 
   // 保存刷新令牌
   await saveRefreshToken(user.id, refreshToken);
@@ -154,7 +159,9 @@ export async function refreshTokenController(request, data) {
     await deleteRefreshToken(refreshToken);
 
     // 生成新的令牌
-    const { accessToken, refreshToken: newRefreshToken } = generateTokens(user);
+    const { accessToken, refreshToken: newRefreshToken } = await generateTokens(
+      user
+    );
 
     // 保存新的刷新令牌
     await saveRefreshToken(user.id, newRefreshToken);
@@ -215,7 +222,7 @@ export async function getCurrentUserController(request) {
     console.log("getCurrentUserController开始处理请求");
 
     // 从令牌中获取用户信息
-    const user = verifyJwtToken(request.token);
+    const user = await verifyJwtToken(request.token);
     console.log("从令牌中获取的用户信息:", user);
 
     // 检查用户对象是否存在
@@ -267,7 +274,7 @@ export async function getCurrentUserController(request) {
  */
 export async function updateUserController(request, data) {
   // 从令牌中获取用户信息
-  const user = verifyJwtToken(request.token);
+  const user = await verifyJwtToken(request.token);
 
   // 更新用户信息
   const updatedUser = await updateUser(user.userId, data);
@@ -292,7 +299,7 @@ export async function updateUserController(request, data) {
  */
 export async function deleteUserController(request) {
   // 从令牌中获取用户信息
-  const user = verifyJwtToken(request.token);
+  const user = await verifyJwtToken(request.token);
 
   // 删除用户
   const isDeleted = await deleteUser(user.userId);
@@ -305,4 +312,62 @@ export async function deleteUserController(request) {
     success: true,
     message: "用户已删除",
   });
+}
+
+/**
+ * 更新用户设置
+ * @param {Request} request 请求对象
+ * @param {Object} data 更新数据
+ * @returns {Promise<Response>} 响应对象
+ */
+export async function updateUserSettingsController(request, data) {
+  try {
+    // 从令牌中获取用户信息
+    const user = await verifyJwtToken(request.token);
+
+    // 如果要更改密码，验证当前密码
+    if (data.password && data.currentPassword) {
+      // 获取用户完整信息（包含密码哈希）
+      const userInfo = await getUserById(user.userId);
+
+      // 验证当前密码
+      const isPasswordValid = await verifyPassword(
+        data.currentPassword,
+        userInfo.password_hash
+      );
+      if (!isPasswordValid) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "INVALID_PASSWORD",
+              message: "当前密码不正确",
+            },
+          },
+          { status: 400 }
+        );
+      }
+
+      // 移除当前密码字段，不需要存储
+      delete data.currentPassword;
+    }
+
+    // 更新用户信息
+    const updatedUser = await updateUser(user.userId, data);
+
+    // 返回更新后的用户信息
+    return NextResponse.json({
+      success: true,
+      data: {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        walletAddress: updatedUser.wallet_address,
+        role: updatedUser.role,
+      },
+    });
+  } catch (error) {
+    console.error("更新用户设置失败:", error);
+    return createServerErrorResponse(error);
+  }
 }

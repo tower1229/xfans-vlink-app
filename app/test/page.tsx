@@ -22,8 +22,8 @@ import {
 } from "viem";
 import { sepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
-import DashboardLayout from "../dashboard-layout";
-import { fetchWithAuth } from "../utils/api";
+import DashboardLayout from "../(core)/dashboard-layout";
+import { fetchWithAuth } from "../_utils/api";
 
 // 定义交易参数接口
 interface TransactionParams {
@@ -502,7 +502,8 @@ export default function TestPage() {
         });
 
         setTxStatus(
-          `交易已确认，区块: ${receipt.blockNumber}, 状态: ${receipt.status === "success" ? "成功" : "失败"
+          `交易已确认，区块: ${receipt.blockNumber}, 状态: ${
+            receipt.status === "success" ? "成功" : "失败"
           }`
         );
 
