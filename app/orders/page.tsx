@@ -98,11 +98,10 @@ export default function Orders() {
 
   return (
     <DashboardLayout>
-      <div className="bg-white rounded-lg shadow-sm">
-        <OrderTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+      <div className="p-6">
+        <div className="bg-white rounded-lg shadow-sm">
 
-        <div className="p-4">
-          <div className="flex mb-4 justify-between items-center">
+          <div className="flex justify-between items-center p-6">
             <h1 className="font-semibold text-xl text-gray-900">订单管理</h1>
             <button
               onClick={handleExportOrders}
@@ -111,6 +110,9 @@ export default function Orders() {
               导出订单
             </button>
           </div>
+
+          <OrderTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+
 
           <OrderList
             orders={orders}

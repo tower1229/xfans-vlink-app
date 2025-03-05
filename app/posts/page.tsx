@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/(core)/dashboard-layout";
-import { Post, PostFormData, fetchPosts, createPost, updatePost, deletePost } from "@/_actions/postActions";
+import { Post, PostFormData } from "@/_types/post";
+import { fetchPosts, createPost, updatePost, deletePost } from "@/_actions/postActions";
 
 export default function Posts() {
   const [posts, setPosts] = useState<Post[]>([]);
