@@ -3,11 +3,6 @@ description: 电子商务系统 API 设计最佳实践，确保安全性、性�
 globs: "app/api/**", "app/lib/api/**"
 alwaysApply: false
 ---
----
-description: 电子商务系统 API 设计最佳实践，确保安全性、性能和可扩展性。
-globs: ["app/api/**", "app/lib/api/**"]
-alwaysApply: true
----
 
 # 电子商务 API 设计最佳实践
 

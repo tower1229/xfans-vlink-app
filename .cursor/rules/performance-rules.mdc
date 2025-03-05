@@ -1,10 +1,5 @@
 ---
 description: 电子商务系统性能优化最佳实践，确保系统响应速度和用户体验。
-globs: "app/**", "prisma/**", "next.config.ts"
-alwaysApply: false
----
- ---
-description: 电子商务系统性能优化最佳实践，确保系统响应速度和用户体验。
 globs: ["app/**", "prisma/**", "next.config.ts"]
 alwaysApply: true
 ---
