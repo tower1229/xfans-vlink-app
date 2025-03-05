@@ -1,0 +1,172 @@
+---
+description: 本文档定义了项目的目录结构规范，确保代码组织的一致性和可维护性。
+globs: app/**/*
+alwaysApply: false
+---
+ # 目录结构规范
+
+> 本文档定义了项目的目录结构规范，确保代码组织的一致性和可维护性。
+
+## 快速参考
+
+- 使用 `app/` 作为所有源代码的根目录
+- API 相关代码放在 `app/api/` 目录下
+- 前端组件放在 `app/components/` 目录下
+- 核心库文件放在 `app/lib/` 目录下
+- 通用工具函数放在 `app/_utils/` 目录下
+
+## 目录结构图
+
+```bash
+app/
+├── api/                    # API 相关代码
+│   ├── controllers/       # 控制器层，处理请求和响应
+│   ├── middleware/       # 中间件，如认证、错误处理等
+│   ├── schemas/         # 数据验证模式
+│   ├── utils/           # 工具函数
+│   │   ├── redis.mjs   # Redis 缓存工具
+│   │   └── userUtils.js # 用户相关工具函数
+│   └── v1/             # API 版本
+│       └── users/      # 用户相关路由
+├── components/           # React 组件
+├── lib/                 # 核心库文件
+│   └── db.js           # 数据库配置
+└── _utils/             # 通用工具函数
+```
+
+## 命名规范
+
+### 目录命名
+
+\`\`\`typescript
+// ✅ 正确的目录命名
+app/api/v1/users/
+app/components/UserProfile/
+app/lib/database/
+
+// ❌ 错误的目录命名
+app/API/V1/Users/ // 不要使用大写
+app/components/user-profile/ // 组件目录使用 PascalCase
+app/lib/DB/ // 不要使用大写缩写
+\`\`\`
+
+### 文件命名
+
+\`\`\`typescript
+// ✅ 正确的文件命名
+UserProfile.tsx
+userUtils.js
+auth.middleware.js
+user.schema.js
+
+// ❌ 错误的文件命名
+userprofile.tsx // 组件文件应使用 PascalCase
+UserUtils.js // 工具函数应使用 camelCase
+Auth.js // 中间件文件应包含 .middleware 后缀
+\`\`\`
+
+## 目录职责
+
+### `app/api/`
+
+**用途**：存放所有后端 API 相关代码
+**原则**：按功能模块和版本组织
+
+\`\`\`typescript
+// ✅ 推荐的组织方式
+app/api/v1/users/route.js
+app/api/controllers/userController.js
+app/api/middleware/auth.js
+
+// ❌ 避免的方式
+app/api/users.js // 未遵循版本化
+app/api/v1/controller.js // 未按功能模块分离
+\`\`\`
+
+### `app/components/`
+
+**用途**：存放 React 组件
+**原则**：按功能或页面组织
+
+\`\`\`typescript
+// ✅ 推荐的组织方式
+app/components/UserProfile/index.tsx
+app/components/UserProfile/styles.css
+app/components/UserProfile/types.ts
+
+// ❌ 避免的方式
+app/components/Profile.tsx // 未使用目录组织相关文件
+app/components/styles/UserProfile.css // 样式文件应与组件放在一起
+\`\`\`
+
+## 最佳实践
+
+1. **目录结构扁平化**
+
+   ```typescript
+   // ✅ 推荐的结构
+   app/components/UserProfile/
+   app/components/UserSettings/
+
+   // ❌ 避免的结构
+   app/components/User/Profile/Settings/
+   ```
+
+2. **相关文件集中**
+
+   ```typescript
+   // ✅ 推荐的组织方式
+   app/components/UserProfile/
+   ├── index.tsx
+   ├── styles.css
+   ├── types.ts
+   └── tests/
+
+   // ❌ 避免的组织方式
+   app/
+   ├── components/UserProfile.tsx
+   ├── styles/UserProfile.css
+   └── types/UserProfile.ts
+   ```
+
+3. **使用 index 文件**
+
+   ```typescript
+   // ✅ 推荐的方式
+   // app/api/controllers/index.js
+   export * from "./userController";
+   export * from "./orderController";
+
+   // ❌ 避免的方式
+   // 直接导入具体文件
+   import { userController } from "./api/controllers/userController";
+   ```
+
+## 变更流程
+
+1. **提出变更建议**
+
+   - 创建 Issue 描述变更需求
+   - 提供变更的具体原因和好处
+
+2. **团队讨论**
+
+   - 在 Issue 中收集反馈
+   - 达成共识后再执行变更
+
+3. **执行变更**
+
+   - 创建新分支进行修改
+   - 更新本文档
+   - 提交 Pull Request
+
+4. **验证和部署**
+   - 确保所有测试通过
+   - 更新受影响的导入路径
+   - 部署并验证变更
+
+## 参考
+
+- [TypeScript 命名规范](mdc:@file:.cursor/rules/typescript-rules.mdc)
+- [性能优化最佳实践](mdc:@file:.cursor/rules/performance-rules.mdc)
+- [安全规范](mdc:@file:.cursor/rules/security-rules.mdc)

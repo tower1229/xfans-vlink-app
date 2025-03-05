@@ -1,6 +1,6 @@
 ---
 description: 电子商务系统 API 设计最佳实践，确保安全性、性能和可扩展性。
-globs: "app/api/**", "app/lib/api/**"
+globs: app/api/**/*
 alwaysApply: false
 ---
 

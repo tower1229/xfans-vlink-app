@@ -1,0 +1,72 @@
+{
+    "rules": {
+        "api-design-rules": {
+            "description": "电子商务系统 API 设计最佳实践，确保安全性、性能和可扩展性。",
+            "glob": "app/api/**/*",
+            "path": ".cursor/rules/api-design-rules.mdc",
+            "references": [
+                "@file:.cursor/rules/performance-rules.mdc",
+                "@file:.cursor/rules/security-rules.mdc"
+            ]
+        },
+        "database-rules": {
+            "description": "电子商务系统数据库设计最佳实践，确保数据完整性、性能和可扩展性。",
+            "glob": [
+                "app/api/prisma/*",
+                "app/api/utils/redis.mjs"
+            ],
+            "path": ".cursor/rules/database-rules.mdc",
+            "references": [
+                "@file:.cursor/rules/performance-rules.mdc"
+            ]
+        },
+        "frontend-rules": {
+            "description": "电子商务系统前端开发最佳实践，确保用户体验、性能和可维护性。",
+            "glob": [
+                "app/_components/**/*",
+                "app/_utils/**/*",
+                "app/_hooks/**/*",
+                "app/_lib/**/*",
+                "app/_providers/**/*",
+                "app/**/*.tsx"
+            ],
+            "path": ".cursor/rules/frontend-rules.mdc",
+            "references": [
+                "@file:.cursor/rules/directory-structure-rules.mdc"
+            ]
+        },
+        "performance-rules": {
+            "description": "电子商务系统性能优化最佳实践，确保系统响应速度和用户体验。",
+            "glob": "app/**/*",
+            "path": ".cursor/rules/performance-rules.mdc"
+        },
+        "security-rules": {
+            "description": "电子商务系统安全最佳实践，确保系统和用户数据的安全性。",
+            "glob": [
+                "app/**/*"
+            ],
+            "path": ".cursor/rules/security-rules.mdc"
+        },
+        "directory-structure-rules": {
+            "description": "项目目录结构规范，确保代码组织的一致性和可维护性。",
+            "glob": "app/**/*",
+            "path": ".cursor/rules/directory-structure-rules.mdc",
+            "semantic_description": [
+                "这个规则定义了项目的目录结构和文件组织方式",
+                "适用于所有在 app 目录下工作的开发者",
+                "包含目录命名规范、文件命名规范和最佳实践"
+            ]
+        },
+        "typescript-rules": {
+            "description": "TypeScript 开发规范和最佳实践",
+            "glob": [
+                "**/*.ts",
+                "**/*.tsx"
+            ],
+            "path": ".cursor/rules/typescript-rules.mdc",
+            "references": [
+                "@file:.cursor/rules/directory-structure-rules.mdc"
+            ]
+        }
+    }
+}

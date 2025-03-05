@@ -1,0 +1,280 @@
+---
+description: 本文档定义了项目的 TypeScript 开发规范，确保代码质量和一致性。
+globs: **/*.ts, **/*.tsx
+alwaysApply: false
+---
+ # TypeScript 开发规范
+
+> 本文档定义了项目的 TypeScript 开发规范，确保代码质量和一致性。
+
+## 类型定义
+
+### 基本类型
+
+```typescript
+// ✅ 推荐的类型定义
+const count: number = 0;
+const name: string = '';
+const isValid: boolean = true;
+const items: string[] = [];
+const tuple: [string, number] = ['', 0];
+
+// ❌ 避免的类型定义
+const count: Number = 0;        // 使用原始类型，而不是包装类型
+const items: Array<string> = []; // 优先使用 string[] 语法
+const value: any = {};         // 避免使用 any
+```
+
+### 接口和类型别名
+
+```typescript
+// ✅ 推荐的接口定义
+interface User {
+  id: string;
+  name: string;
+  age?: number;  // 可选属性使用 ?
+  readonly createdAt: Date;  // 只读属性
+}
+
+// ✅ 类型别名用于联合类型或工具类型
+type Status = 'pending' | 'success' | 'error';
+type Nullable<T> = T | null;
+
+// ❌ 避免的接口定义
+interface user {  // 接口名应使用 PascalCase
+  Id: string;    // 属性名应使用 camelCase
+  created_at: Date;  // 避免使用下划线
+}
+```
+
+### 泛型
+
+```typescript
+// ✅ 推荐的泛型使用
+interface Response<T> {
+  data: T;
+  status: number;
+}
+
+function getList<T>(url: string): Promise<T[]> {
+  return fetch(url).then(res => res.json());
+}
+
+// ❌ 避免的泛型使用
+interface Response {  // 缺少类型参数
+  data: any;
+}
+
+function getList(url: string): Promise<any> {  // 未使用泛型
+  return fetch(url).then(res => res.json());
+}
+```
+
+## 函数
+
+### 函数定义
+
+```typescript
+// ✅ 推荐的函数定义
+function calculateTotal(items: CartItem[]): number {
+  return items.reduce((sum, item) => sum + item.price, 0);
+}
+
+const handleClick = (event: React.MouseEvent<HTMLButtonElement>): void => {
+  event.preventDefault();
+};
+
+// ❌ 避免的函数定义
+function calculate(x, y) {  // 缺少参数类型
+  return x + y;
+}
+
+const handler = (e) => {};  // 缺少事件类型
+```
+
+### 异步函数
+
+```typescript
+// ✅ 推荐的异步函数定义
+async function fetchUser(id: string): Promise<User> {
+  const response = await fetch(`/api/users/${id}`);
+  return response.json();
+}
+
+// ❌ 避免的异步函数定义
+async function fetchUser(id: string) {  // 缺少返回类型
+  const response = await fetch(`/api/users/${id}`);
+  return response.json();
+}
+```
+
+## React 相关
+
+### 组件定义
+
+```typescript
+// ✅ 推荐的组件定义
+interface Props {
+  title: string;
+  onClose: () => void;
+  children?: React.ReactNode;
+}
+
+const Modal: React.FC<Props> = ({ title, onClose, children }) => {
+  return (
+    <div>
+      <h2>{title}</h2>
+      {children}
+      <button onClick={onClose}>关闭</button>
+    </div>
+  );
+};
+
+// ❌ 避免的组件定义
+const Modal = ({ title, onClose, children }) => {  // 缺少类型定义
+  return (
+    <div>
+      <h2>{title}</h2>
+      {children}
+      <button onClick={onClose}>关闭</button>
+    </div>
+  );
+};
+```
+
+### Hooks 使用
+
+```typescript
+// ✅ 推荐的 Hooks 使用
+interface State {
+  count: number;
+  text: string;
+}
+
+const [state, setState] = useState<State>({
+  count: 0,
+  text: ''
+});
+
+const cache = useMemo<Map<string, User>>(() => {
+  return new Map();
+}, []);
+
+// ❌ 避免的 Hooks 使用
+const [state, setState] = useState();  // 缺少类型参数
+const cache = useMemo(() => new Map());  // 缺少类型参数
+```
+
+## 最佳实践
+
+### 1. 严格的类型检查
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "useUnknownInCatchVariables": true
+  }
+}
+```
+
+### 2. 类型断言
+
+```typescript
+// ✅ 推荐的类型断言
+const input = document.getElementById('input') as HTMLInputElement;
+const value = (event.target as HTMLInputElement).value;
+
+// ❌ 避免的类型断言
+const input = <HTMLInputElement>document.getElementById('input');  // 避免使用尖括号语法
+const value = event.target!.value;  // 避免使用非空断言
+```
+
+### 3. 类型导入和导出
+
+```typescript
+// ✅ 推荐的类型导入导出
+import type { User } from './types';
+export type { Response } from './api';
+
+// ❌ 避免的类型导入导出
+import { User } from './types';  // 未使用 type 关键字
+export { Response } from './api';  // 未使用 type 关键字
+```
+
+### 4. 错误处理
+
+```typescript
+// ✅ 推荐的错误处理
+class ApiError extends Error {
+  constructor(public code: number, message: string) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+try {
+  await api.request();
+} catch (error) {
+  if (error instanceof ApiError) {
+    handleApiError(error);
+  } else {
+    throw error;
+  }
+}
+
+// ❌ 避免的错误处理
+try {
+  await api.request();
+} catch (error: any) {  // 避免使用 any
+  handleError(error);
+}
+```
+
+## 工具和配置
+
+### ESLint 配置
+
+```json
+{
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-requiring-type-checking"
+  ],
+  "rules": {
+    "@typescript-eslint/explicit-function-return-type": "error",
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/no-unused-vars": "error",
+    "@typescript-eslint/prefer-as-const": "error",
+    "@typescript-eslint/prefer-nullish-coalescing": "error",
+    "@typescript-eslint/prefer-optional-chain": "error"
+  }
+}
+```
+
+### Prettier 配置
+
+```json
+{
+  "semi": true,
+  "trailingComma": "es5",
+  "singleQuote": true,
+  "printWidth": 80,
+  "tabWidth": 2,
+  "arrowParens": "avoid"
+}
+```
+
+## 参考
+
+- [TypeScript 官方文档](mdc:https:/www.typescriptlang.org/docs)
+- [React TypeScript Cheatsheet](mdc:https:/react-typescript-cheatsheet.netlify.app)
+- [目录结构规范](mdc:@file:.cursor/rules/directory-structure-rules.mdc)
