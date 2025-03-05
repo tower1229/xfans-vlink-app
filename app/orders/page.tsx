@@ -7,30 +7,12 @@ import OrderList from "./_components/OrderList";
 import OrderTabs from "./_components/OrderTabs";
 import OrderPagination from "./_components/OrderPagination";
 import { fetchOrders, closeOrder } from "./_lib/orderActions";
-
-// Define the Order type
-interface Order {
-  id: string;
-  customer: string;
-  date: string;
-  total: string;
-  status: string;
-  items: number;
-  userAddress?: string;
-  productId?: string;
-  transactionHash?: string;
-}
-
-interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  pageSize: number;
-}
+import { ApiOrder, PaginationInfo } from "@/_types/order";
+import { OrderStatus } from "./_lib/orderUtils";
 
 export default function Orders() {
-  const [activeTab, setActiveTab] = useState("all");
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [activeTab, setActiveTab] = useState<0 | 1 | 2 | 3 | 4 | "all">("all");
+  const [orders, setOrders] = useState<ApiOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [closing, setClosing] = useState<string | null>(null);
@@ -90,7 +72,9 @@ export default function Orders() {
         // Update the local order state
         setOrders((prev) =>
           prev.map((order) =>
-            order.id === orderId ? { ...order, status: "closed" } : order
+            order.id === orderId
+              ? { ...order, status: OrderStatus.CLOSED as 0 | 1 | 2 | 3 | 4 }
+              : order
           )
         );
       } else {

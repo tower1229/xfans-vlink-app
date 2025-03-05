@@ -1,16 +1,20 @@
 import React from "react";
+import { OrderStatus, OrderStatusMap } from "../_lib/orderUtils";
 
 interface OrderTabsProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
+  activeTab: 0 | 1 | 2 | 3 | 4 | "all";
+  setActiveTab: (tab: 0 | 1 | 2 | 3 | 4 | "all") => void;
 }
 
+type Tab = { id: 0 | 1 | 2 | 3 | 4 | "all"; label: string };
+
 const OrderTabs: React.FC<OrderTabsProps> = ({ activeTab, setActiveTab }) => {
-  const tabs = [
+  const tabs: Tab[] = [
     { id: "all", label: "全部" },
-    { id: "pending", label: "待支付" },
-    { id: "completed", label: "已完成" },
-    { id: "closed", label: "已关闭" },
+    ...Object.entries(OrderStatusMap).map(([status, label]) => ({
+      id: Number(status) as 0 | 1 | 2 | 3 | 4,
+      label,
+    })),
   ];
 
   return (
@@ -18,7 +22,7 @@ const OrderTabs: React.FC<OrderTabsProps> = ({ activeTab, setActiveTab }) => {
       <nav className="flex -mb-px">
         {tabs.map((tab) => (
           <button
-            key={tab.id}
+            key={String(tab.id)}
             onClick={() => setActiveTab(tab.id)}
             className={`py-4 px-6 text-sm font-medium ${
               activeTab === tab.id

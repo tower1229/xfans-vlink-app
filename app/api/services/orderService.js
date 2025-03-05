@@ -29,10 +29,33 @@ function validateOrderData(orderData) {
     throw new OrderError("订单数据必须是一个对象", "INVALID_ORDER_DATA");
   }
 
-  const requiredFields = ["productId", "userId", "chainId"];
+  // 检查必需字段
+  const requiredFields = ["productId", "userId"];
   for (const field of requiredFields) {
     if (!orderData[field]) {
       throw new OrderError(`缺少必要字段: ${field}`, "MISSING_REQUIRED_FIELD");
+    }
+  }
+
+  // 验证字段格式
+  if (
+    typeof orderData.productId !== "string" ||
+    orderData.productId.trim() === ""
+  ) {
+    throw new OrderError("产品ID格式无效", "INVALID_PRODUCT_ID");
+  }
+
+  if (typeof orderData.userId !== "string" || orderData.userId.trim() === "") {
+    throw new OrderError("用户ID格式无效", "INVALID_USER_ID");
+  }
+
+  // 如果提供了orderId，验证其格式
+  if (orderData.orderId !== undefined) {
+    if (
+      typeof orderData.orderId !== "string" ||
+      orderData.orderId.trim() === ""
+    ) {
+      throw new OrderError("订单ID格式无效", "INVALID_ORDER_ID");
     }
   }
 }
@@ -110,15 +133,23 @@ export async function updateExpiredOrders() {
  */
 export async function getOrdersByUser(userId, status, options = {}) {
   try {
+    console.log("getOrdersByUser - 开始获取用户订单");
+    console.log("用户ID:", userId);
+    console.log("订单状态:", status);
+    console.log("查询选项:", options);
+
     const { skip = 0, limit = 10 } = options;
 
     // 构建查询条件
-    const query = { userId: userId };
-    if (status !== undefined && status !== null && status !== "all") {
-      query.status = parseInt(status);
-    }
+    const query = {
+      userId: userId,
+      // 移除status条件，先获取所有状态的订单
+    };
+
+    console.log("构建的查询条件:", JSON.stringify(query, null, 2));
 
     // 使用 Promise.all 并行查询数据和总数
+    console.log("开始执行数据库查询");
     const [orders, total] = await Promise.all([
       db.order.findMany({
         where: query,
@@ -126,39 +157,87 @@ export async function getOrdersByUser(userId, status, options = {}) {
         skip,
         take: limit,
         include: {
-          post: true,
-          user: true,
+          post: {
+            select: {
+              id: true,
+              title: true,
+              price: true,
+              image: true,
+              tokenAddress: true,
+              ownerAddress: true,
+              chainId: true,
+            },
+          },
+          user: {
+            select: {
+              id: true,
+              username: true,
+              walletAddress: true,
+            },
+          },
         },
       }),
       db.order.count({ where: query }),
     ]);
 
-    // 格式化订单数据
-    const formattedOrders = orders.map((order) => ({
-      id: order.id,
-      productId: order.post?.id || order.postId,
-      userId: order.userId,
-      price: order.amount.toString(),
-      tokenAddress: order.post?.tokenAddress || null,
-      chainId: order.post?.chainId || null,
-      status: order.status,
-      statusText: OrderStatusMap[order.status],
-      transactionHash: order.txHash,
-      createdAt: order.createdAt,
-      expiresAt: order.expiresAt,
-      isExpired:
-        order.status === OrderStatus.EXPIRED ||
-        (order.status === OrderStatus.PENDING &&
-          new Date(order.expiresAt) < new Date()),
+    console.log("数据库查询完成");
+    // 转换BigInt为字符串
+    const safeOrders = orders.map((order) => ({
+      ...order,
+      amount: order.amount.toString(),
       post: order.post
         ? {
-            id: order.post.id,
-            title: order.post.title,
+            ...order.post,
             price: order.post.price.toString(),
-            image: order.post.image,
           }
         : null,
     }));
+    console.log("原始查询结果:", JSON.stringify(safeOrders, null, 2));
+    console.log("查询到的订单数量:", orders.length);
+    console.log("订单总数:", total);
+
+    // 格式化订单数据
+    const formattedOrders = orders.map((order) => {
+      console.log("格式化订单:", order.id);
+      return {
+        id: order.id,
+        productId: order.postId,
+        userId: order.userId,
+        price: order.amount.toString(), // 确保转换BigInt
+        tokenAddress: order.post?.tokenAddress || null,
+        chainId: order.post?.chainId || null,
+        status: order.status,
+        statusText: OrderStatusMap[order.status] || "未知状态",
+        transactionHash: order.txHash || null,
+        createdAt: order.createdAt,
+        expiresAt: order.expiresAt,
+        isExpired:
+          order.status === OrderStatus.EXPIRED ||
+          (order.status === OrderStatus.PENDING &&
+            new Date(order.expiresAt) < new Date()),
+        post: order.post
+          ? {
+              id: order.post.id,
+              title: order.post.title,
+              price: order.post.price.toString(), // 确保转换BigInt
+              image: order.post.image,
+            }
+          : null,
+        user: order.user
+          ? {
+              id: order.user.id,
+              username: order.user.username,
+              walletAddress: order.user.walletAddress,
+            }
+          : null,
+      };
+    });
+
+    console.log("订单数据格式化完成");
+    console.log(
+      "格式化后的订单数据:",
+      JSON.stringify(formattedOrders, null, 2)
+    );
 
     return {
       orders: formattedOrders,
@@ -166,6 +245,7 @@ export async function getOrdersByUser(userId, status, options = {}) {
     };
   } catch (error) {
     console.error("获取用户订单列表失败:", error);
+    console.error("错误堆栈:", error.stack);
     throw new OrderError(
       `获取用户订单列表失败: ${error.message}`,
       "FETCH_ORDERS_ERROR"
@@ -187,15 +267,29 @@ export async function createNewOrder(orderData) {
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 30);
 
+    // 获取产品信息
+    const post = await db.post.findUnique({
+      where: { id: orderData.productId },
+    });
+
+    if (!post) {
+      throw new OrderError("产品不存在", "PRODUCT_NOT_FOUND");
+    }
+
     // 创建订单记录
     const order = await db.order.create({
       data: {
-        id: orderData.orderId,
+        id: orderData.orderId, // 使用传入的orderId
         postId: orderData.productId,
         userId: orderData.userId,
-        amount: orderData.price,
-        status: OrderStatus.PENDING,
+        amount: post.price, // 使用产品价格
+        status: OrderStatus.PENDING, // 确保设置初始状态
         expiresAt,
+      },
+      include: {
+        // 包含关联数据
+        post: true,
+        user: true,
       },
     });
 
@@ -314,6 +408,11 @@ export async function getAllOrders(options = {}) {
     const where = {};
     if (status !== undefined && status !== null && status !== "all") {
       where.status = parseInt(status);
+    } else {
+      // 如果没有指定状态，默认查询所有非过期状态的订单
+      where.status = {
+        not: OrderStatus.EXPIRED,
+      };
     }
 
     // 使用 Promise.all 并行查询数据和总数

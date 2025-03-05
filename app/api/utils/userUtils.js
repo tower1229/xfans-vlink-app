@@ -407,12 +407,29 @@ export async function verifyJwtToken(token) {
     console.log("验证JWT令牌:", token.substring(0, 10) + "...");
     console.log("使用的JWT密钥:", JWT_SECRET);
 
+    // 添加令牌格式检查
+    if (!token || typeof token !== "string" || token.trim() === "") {
+      console.error("无效的令牌格式");
+      return null;
+    }
+
+    // 检查令牌是否以Bearer开头
+    if (token.startsWith("Bearer ")) {
+      token = token.substring(7);
+      console.log("已移除Bearer前缀");
+    }
+
     const { payload } = await jwtVerify(
       token,
       new TextEncoder().encode(JWT_SECRET)
     );
 
-    console.log("JWT令牌验证成功:", payload);
+    console.log("JWT令牌验证成功，用户信息:", {
+      userId: payload.userId,
+      username: payload.username,
+      role: payload.role,
+      walletAddress: payload.walletAddress,
+    });
 
     // 确保返回的用户信息包含walletAddress字段
     if (payload && payload.walletAddress && !payload.wallet_address) {
@@ -422,6 +439,11 @@ export async function verifyJwtToken(token) {
     return payload;
   } catch (error) {
     console.error("验证JWT令牌失败:", error.name, error.message);
+    if (error.code === "ERR_JWS_INVALID") {
+      console.error("令牌签名无效");
+    } else if (error.code === "ERR_JWT_EXPIRED") {
+      console.error("令牌已过期");
+    }
     return null;
   }
 }

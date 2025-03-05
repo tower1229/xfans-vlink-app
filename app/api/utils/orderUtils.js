@@ -1,4 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
+import { encodeFunctionData } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 
 // 定义订单状态常量
 export const OrderStatus = {
@@ -20,10 +22,13 @@ export const OrderStatusMap = {
 
 /**
  * 生成订单ID
- * @returns {string} 订单ID
+ * @returns {string} 订单ID（64个字符，适合bytes32格式）
  */
 export function generateOrderId() {
-  return uuidv4();
+  // 使用两个UUID拼接，确保生成64个字符
+  const uuid1 = uuidv4().replace(/-/g, "");
+  const uuid2 = uuidv4().replace(/-/g, "");
+  return uuid1 + uuid2;
 }
 
 /**
@@ -49,3 +54,116 @@ export function isOrderExpired(expiresAt, status) {
     expiresAt instanceof Date ? expiresAt : new Date(expiresAt);
   return expireDate < new Date();
 }
+
+/**
+ * 签名订单消息
+ * @param {string} messageHash - 消息哈希
+ * @returns {Promise<string>} 签名
+ */
+export async function signOrderMessage(messageHash) {
+  try {
+    const privateKey = process.env.VERIFIER_PRIVATE_KEY;
+
+    // 检查私钥是否存在且不为空
+    if (!privateKey || privateKey.trim() === "") {
+      throw new Error(
+        "未配置签名私钥，无法创建订单。请在环境变量中设置VERIFIER_PRIVATE_KEY"
+      );
+    }
+
+    // 格式化私钥，确保有0x前缀
+    const formattedPrivateKey = privateKey.startsWith("0x")
+      ? privateKey
+      : `0x${privateKey}`;
+
+    // 创建账户
+    const account = privateKeyToAccount(formattedPrivateKey);
+
+    // 使用账户签名消息
+    const signature = await account.signMessage({
+      message: { raw: messageHash },
+    });
+
+    return signature;
+  } catch (error) {
+    console.error("生成订单签名失败:", error);
+    throw new Error(`签名生成失败: ${error.message}`);
+  }
+}
+
+/**
+ * 构建支付交易
+ * @param {Object} order - 订单信息
+ * @param {string} encodedOrderData - 编码后的订单数据
+ * @param {string} signature - 签名
+ * @returns {Object} 交易对象
+ */
+export async function buildPaymentTransaction(
+  order,
+  encodedOrderData,
+  signature
+) {
+  // 定义支付合约地址
+  const NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS =
+    process.env.NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS ||
+    "0x1234567890123456789012345678901234567890";
+
+  // 根据支付方式构建不同的交易
+  if (order.tokenAddress === "0x0000000000000000000000000000000000000000") {
+    // ETH支付 - 构建payWithNative交易
+    return {
+      to: NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS,
+      value: order.price.toString(),
+      data: encodeFunctionData({
+        abi: [
+          {
+            name: "payWithNative",
+            type: "function",
+            stateMutability: "payable",
+            inputs: [
+              { name: "orderData", type: "bytes" },
+              { name: "signature", type: "bytes" },
+            ],
+            outputs: [],
+          },
+        ],
+        functionName: "payWithNative",
+        args: [encodedOrderData, signature],
+      }),
+      chainId: order.chainId,
+    };
+  } else {
+    // ERC20支付 - 构建payWithERC20交易
+    return {
+      to: NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS,
+      value: "0",
+      data: encodeFunctionData({
+        abi: [
+          {
+            name: "payWithERC20",
+            type: "function",
+            stateMutability: "nonpayable",
+            inputs: [
+              { name: "token", type: "address" },
+              { name: "amount", type: "uint256" },
+              { name: "orderData", type: "bytes" },
+              { name: "signature", type: "bytes" },
+            ],
+            outputs: [],
+          },
+        ],
+        functionName: "payWithERC20",
+        args: [
+          order.tokenAddress,
+          BigInt(order.price.toString()),
+          encodedOrderData,
+          signature,
+        ],
+      }),
+      chainId: order.chainId,
+    };
+  }
+}
+
+// 重新导出 viem 的函数
+export { encodeAbiParameters, parseAbiParameters } from "viem";

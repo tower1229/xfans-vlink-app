@@ -321,7 +321,7 @@ export default function Posts() {
   // 渲染编辑模态框
   const renderEditModal = () => {
     return (
-      <div className="bg-black flex bg-opacity-50 inset-0 z-50 fixed items-center justify-center">
+      <div className="flex bg-black/50 inset-0 z-50 fixed items-center justify-center">
         <div className="bg-white rounded-lg max-w-md w-full p-6">
           <h2 className="font-bold text-xl mb-4">编辑付费内容</h2>
           <div className="space-y-4">

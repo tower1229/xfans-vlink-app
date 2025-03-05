@@ -1,28 +1,5 @@
 import { fetchWithAuth } from "@/_utils/api";
-
-interface Order {
-  id: string;
-  customer: string;
-  date: string;
-  total: string;
-  status: string;
-  items: number;
-  userAddress?: string;
-  productId?: string;
-  transactionHash?: string;
-}
-
-interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  pageSize: number;
-}
-
-interface OrdersResponse {
-  orders: Order[];
-  pagination: PaginationInfo;
-}
+import { ApiOrder, OrdersResponse, PaginationInfo } from "@/_types/order";
 
 /**
  * 获取订单列表
@@ -32,10 +9,10 @@ interface OrdersResponse {
  * @returns 订单列表和分页信息
  */
 export const fetchOrders = async (
-  status: string = "all",
+  status: ApiOrder["status"] | "all" = "all",
   page: number = 1,
   pageSize: number = 10
-): Promise<OrdersResponse> => {
+): Promise<{ orders: ApiOrder[]; pagination: PaginationInfo }> => {
   try {
     // Build the API URL with status filter and pagination
     let url = `/api/v1/orders?page=${page}&pageSize=${pageSize}`;
@@ -51,30 +28,11 @@ export const fetchOrders = async (
       throw new Error(`Error fetching orders: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as OrdersResponse;
 
     if (data.success) {
-      // Transform API data to match our component's expected format
-      const formattedOrders = data.data.orders.map((order: any) => ({
-        id: order.id,
-        customer: order.userAddress,
-        date: new Date(order.createdAt).toLocaleString("zh-CN", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        total: `¥${order.price}`,
-        status: order.status,
-        items: 1,
-        userAddress: order.userAddress,
-        productId: order.productId,
-        transactionHash: order.transactionHash,
-      }));
-
       return {
-        orders: formattedOrders,
+        orders: data.data.orders,
         pagination: {
           currentPage: data.data.currentPage,
           totalPages: data.data.totalPages,
@@ -98,7 +56,7 @@ export const fetchOrders = async (
  */
 export const closeOrder = async (orderId: string): Promise<boolean> => {
   try {
-    const payload = { status: "closed" };
+    const payload = { status: 2 }; // 2 表示已关闭状态
 
     const response = await fetchWithAuth(`/api/v1/orders/${orderId}/status`, {
       method: "PUT",

@@ -11,9 +11,16 @@ import {
 } from "../services/orderService";
 import { getPostById } from "../utils/postUtils";
 import { OrderError } from "../../_utils/errors";
-import { isAddress, keccak256, parseEther, formatEther } from "viem";
-import { verifyJwtToken, checkUserExists } from "../utils/userUtils";
+import { keccak256 } from "viem";
+import { verifyJwtToken } from "../utils/userUtils";
 import { redis } from "../utils/redis.mjs";
+import {
+  encodeAbiParameters,
+  parseAbiParameters,
+  signOrderMessage,
+  buildPaymentTransaction,
+  generateOrderId,
+} from "../utils/orderUtils";
 
 /**
  * 统一的响应格式化函数
@@ -44,287 +51,61 @@ export async function createOrderController(request, data) {
       );
     }
 
-    const { productId, chainId } = data;
-    const userAddress = user.walletAddress; // 使用当前用户的钱包地址
-    const userId = user.userId; // JWT中的用户ID字段
-
-    // 验证用户地址
-    if (!isAddress(userAddress)) {
-      throw new ValidationError("无效的用户地址");
-    }
-
-    // 检查用户是否存在
-    const userExists = await checkUserExists(userId);
-    if (!userExists) {
-      throw new NotFoundError(`用户ID ${userId} 不存在，请先创建用户账户`);
-    }
+    const { productId } = data;
+    const userId = user.userId;
 
     // 检查产品是否存在
     const product = await getPostById(productId);
     if (!product) {
-      throw new NotFoundError("产品不存在");
+      throw new OrderError("产品不存在", "PRODUCT_NOT_FOUND");
     }
 
-    // 检查用户是否已有该商品的待支付订单
-    console.log(`检查用户是否已有商品 ${productId} 的待支付订单`);
-    const existingOrders = await getOrdersByUser(userId, "pending");
-    const existingOrder = existingOrders.find(
-      (order) => order.productId === productId
-    );
-
-    if (existingOrder) {
-      console.log(
-        `用户已有商品 ${productId} 的待支付订单: ${existingOrder.id}`
-      );
-
-      // 返回已存在的订单信息
-      // 获取当前时间戳（秒）
-      const timestamp = Math.floor(Date.now() / 1000);
-
-      // 按照指定格式编码orderData
-      const encodedOrderData = encodeAbiParameters(
-        parseAbiParameters(
-          "bytes32, uint256, address, address, uint32, uint64"
-        ),
-        [
-          existingOrder.id, // orderId (bytes32)
-          BigInt(existingOrder.price.toString()), // amount (uint256)
-          existingOrder.tokenAddress, // token (address)
-          existingOrder.ownerAddress, // sellerAddress (address)
-          timestamp, // timestamp (uint32)
-          BigInt(existingOrder.chainId), // chainId (uint64)
-        ]
-      );
-
-      // 计算消息哈希
-      const messageHash = keccak256(encodedOrderData);
-
-      // 签名消息
-      let signature;
-      try {
-        const privateKey = process.env.VERIFIER_PRIVATE_KEY;
-
-        // 检查私钥是否存在且不为空
-        if (!privateKey || privateKey.trim() === "") {
-          throw new Error(
-            "未配置签名私钥，无法创建订单。请在环境变量中设置VERIFIER_PRIVATE_KEY"
-          );
-        }
-
-        // 格式化私钥，确保有0x前缀
-        const formattedPrivateKey = privateKey.startsWith("0x")
-          ? privateKey
-          : `0x${privateKey}`;
-
-        // 使用 messageHash 作为普通消息签名，viem 会自动添加前缀
-        signature = await signMessage({
-          message: { raw: messageHash }, // 使用 messageHash 作为原始字节数据
-          privateKey: formattedPrivateKey,
-        });
-      } catch (error) {
-        console.error("生成订单签名失败:", error.message);
-        throw new ValidationError(`签名生成失败: ${error.message}`);
-      }
-
-      // 定义支付合约地址
-      const NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS =
-        process.env.NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS ||
-        "0x1234567890123456789012345678901234567890";
-
-      // 构建EVM交易对象
-      let transaction;
-
-      // 根据支付方式构建不同的交易
-      if (
-        existingOrder.tokenAddress ===
-        "0x0000000000000000000000000000000000000000"
-      ) {
-        // ETH支付 - 构建payWithNative交易
-        transaction = {
-          to: NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS, // 合约地址
-          value: existingOrder.price.toString(), // 支付金额
-          data: encodeFunctionData({
-            abi: [
-              {
-                name: "payWithNative",
-                type: "function",
-                stateMutability: "payable",
-                inputs: [
-                  { name: "orderData", type: "bytes" },
-                  { name: "signature", type: "bytes" },
-                ],
-                outputs: [],
-              },
-            ],
-            functionName: "payWithNative",
-            args: [encodedOrderData, signature],
-          }),
-          chainId: existingOrder.chainId,
-        };
-      } else {
-        // ERC20支付 - 构建payWithERC20交易
-        transaction = {
-          to: NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS, // 合约地址
-          value: "0", // 不发送ETH
-          data: encodeFunctionData({
-            abi: [
-              {
-                name: "payWithERC20",
-                type: "function",
-                stateMutability: "nonpayable",
-                inputs: [
-                  { name: "token", type: "address" },
-                  { name: "amount", type: "uint256" },
-                  { name: "orderData", type: "bytes" },
-                  { name: "signature", type: "bytes" },
-                ],
-                outputs: [],
-              },
-            ],
-            functionName: "payWithERC20",
-            args: [
-              existingOrder.tokenAddress,
-              BigInt(existingOrder.price.toString()),
-              encodedOrderData,
-              signature,
-            ],
-          }),
-          chainId: existingOrder.chainId,
-        };
-      }
-
-      // 返回已存在订单的交易参数
-      return formatResponse(true, {
-        transaction: transaction,
-        message: "已存在待支付订单，返回该订单的支付信息",
-      });
-    }
-
-    console.log(
-      `创建订单: 产品ID=${productId}, 用户ID=${userId}, 用户钱包地址=${userAddress}`
-    );
-
-    // 创建订单 - 不包含签名
-    const order = await createNewOrder({
+    // 创建订单
+    const orderData = {
       productId,
-      userId, // userId
-      userAddress, // userAddress
-      chainId,
-    });
+      userId,
+      orderId: generateOrderId(), // 使用我们修改过的 generateOrderId 函数
+    };
 
-    // 获取当前时间戳（秒）
+    const order = await createNewOrder(orderData);
+
+    // 构建支付交易数据
     const timestamp = Math.floor(Date.now() / 1000);
 
-    // 按照指定格式编码orderData
+    // 确保订单ID是64个字符（32字节）
+    if (order.id.replace(/-/g, "").length !== 64) {
+      throw new OrderError(
+        "订单ID格式错误：必须是32字节长度",
+        "INVALID_ORDER_ID_LENGTH"
+      );
+    }
+
     const encodedOrderData = encodeAbiParameters(
       parseAbiParameters("bytes32, uint256, address, address, uint32, uint64"),
       [
-        order.id, // orderId (bytes32)
-        BigInt(order.price.toString()), // amount (uint256)
-        order.tokenAddress, // token (address)
-        order.ownerAddress, // sellerAddress (address)
-        timestamp, // timestamp (uint32)
-        BigInt(order.chainId), // chainId (uint64)
+        `0x${order.id.replace(/-/g, "")}`, // 直接使用完整的32字节订单ID
+        BigInt(order.price.toString()),
+        order.tokenAddress,
+        order.ownerAddress,
+        timestamp,
+        BigInt(order.chainId),
       ]
     );
 
-    // 计算消息哈希
+    // 计算消息哈希并签名
     const messageHash = keccak256(encodedOrderData);
+    const signature = await signOrderMessage(messageHash);
 
-    // 签名消息 - 不使用 raw 选项，让 viem 自动添加以太坊签名前缀
-    let signature;
-    try {
-      const privateKey = process.env.VERIFIER_PRIVATE_KEY;
+    // 构建支付交易
+    const transaction = await buildPaymentTransaction(
+      order,
+      encodedOrderData,
+      signature
+    );
 
-      // 检查私钥是否存在且不为空
-      if (!privateKey || privateKey.trim() === "") {
-        throw new Error(
-          "未配置签名私钥，无法创建订单。请在环境变量中设置VERIFIER_PRIVATE_KEY"
-        );
-      }
-
-      // 格式化私钥，确保有0x前缀
-      const formattedPrivateKey = privateKey.startsWith("0x")
-        ? privateKey
-        : `0x${privateKey}`;
-
-      // 使用 messageHash 作为普通消息签名，viem 会自动添加前缀
-      signature = await signMessage({
-        message: { raw: messageHash }, // 使用 messageHash 作为原始字节数据
-        privateKey: formattedPrivateKey,
-      });
-    } catch (error) {
-      console.error("生成订单签名失败:", error.message);
-      throw new ValidationError(`签名生成失败: ${error.message}`);
-    }
-
-    // 定义支付合约地址
-    const NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS =
-      process.env.NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS ||
-      "0x1234567890123456789012345678901234567890";
-
-    // 构建EVM交易对象
-    let transaction;
-
-    // 根据支付方式构建不同的交易
-    if (order.tokenAddress === "0x0000000000000000000000000000000000000000") {
-      // ETH支付 - 构建payWithNative交易
-      transaction = {
-        to: NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS, // 合约地址
-        value: order.price.toString(), // 支付金额
-        data: encodeFunctionData({
-          abi: [
-            {
-              name: "payWithNative",
-              type: "function",
-              stateMutability: "payable",
-              inputs: [
-                { name: "orderData", type: "bytes" },
-                { name: "signature", type: "bytes" },
-              ],
-              outputs: [],
-            },
-          ],
-          functionName: "payWithNative",
-          args: [encodedOrderData, signature],
-        }),
-        chainId: order.chainId,
-      };
-    } else {
-      // ERC20支付 - 构建payWithERC20交易
-      transaction = {
-        to: NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS, // 合约地址
-        value: "0", // 不发送ETH
-        data: encodeFunctionData({
-          abi: [
-            {
-              name: "payWithERC20",
-              type: "function",
-              stateMutability: "nonpayable",
-              inputs: [
-                { name: "token", type: "address" },
-                { name: "amount", type: "uint256" },
-                { name: "orderData", type: "bytes" },
-                { name: "signature", type: "bytes" },
-              ],
-              outputs: [],
-            },
-          ],
-          functionName: "payWithERC20",
-          args: [
-            order.tokenAddress,
-            BigInt(order.price.toString()),
-            encodedOrderData,
-            signature,
-          ],
-        }),
-        chainId: order.chainId,
-      };
-    }
-
-    // 返回交易参数
     return formatResponse(true, {
-      transaction: transaction,
+      order,
+      transaction,
     });
   } catch (error) {
     console.error("创建订单失败:", error);
@@ -400,32 +181,41 @@ export async function updateOrderStatusController(request, orderId, data) {
   const { status, transactionHash } = data;
 
   // 验证状态 - 允许更新为已关闭或已完成状态
-  if (status !== OrderStatus.CLOSED && status !== OrderStatus.COMPLETED) {
+  const statusMap = {
+    closed: OrderStatus.CLOSED,
+    completed: OrderStatus.COMPLETED,
+  };
+
+  const newStatus = statusMap[status];
+  if (newStatus === undefined) {
     throw new ValidationError("订单只能被更新为已关闭或已完成状态");
   }
 
   // 验证当前订单状态
-  if (status === OrderStatus.CLOSED && order.status !== OrderStatus.PENDING) {
+  if (
+    newStatus === OrderStatus.CLOSED &&
+    order.status !== OrderStatus.PENDING
+  ) {
     throw new ValidationError("只有待支付状态的订单可以被关闭");
   }
 
   if (
-    status === OrderStatus.COMPLETED &&
+    newStatus === OrderStatus.COMPLETED &&
     order.status !== OrderStatus.PENDING
   ) {
     throw new ValidationError("只有待支付状态的订单可以被标记为已完成");
   }
 
   // 如果是完成状态，需要提供交易哈希
-  if (status === OrderStatus.COMPLETED && !transactionHash) {
+  if (newStatus === OrderStatus.COMPLETED && !transactionHash) {
     throw new ValidationError("更新为已完成状态时必须提供交易哈希");
   }
 
   // 更新订单状态和交易哈希（如果有）
   const updatedOrder = await updateOrderStatus(
     orderId,
-    status,
-    status === OrderStatus.COMPLETED ? transactionHash : null
+    newStatus,
+    newStatus === OrderStatus.COMPLETED ? transactionHash : null
   );
 
   // 返回更新后的订单
@@ -450,39 +240,46 @@ export async function updateOrderStatusController(request, orderId, data) {
  */
 export async function getUserOrdersController(request, userId, options = {}) {
   try {
+    console.log("开始获取用户订单列表");
+    console.log("用户ID:", userId);
+    console.log("请求选项:", options);
+
     const { page = 1, pageSize = 10, status } = options;
 
     // 参数验证
     if (!userId) {
+      console.log("错误: 用户ID为空");
       throw new ValidationError("用户ID不能为空", "MISSING_USER_ID");
     }
 
     if (page < 1) {
+      console.log("错误: 无效的页码:", page);
       throw new ValidationError("页码必须大于0", "INVALID_PAGE_NUMBER");
     }
 
     if (pageSize < 1 || pageSize > 100) {
+      console.log("错误: 无效的每页数量:", pageSize);
       throw new ValidationError("每页数量必须在1-100之间", "INVALID_PAGE_SIZE");
     }
 
     // 构建缓存键
     const cacheKey = `orders:${userId}:${status}:${page}:${pageSize}`;
+    console.log("缓存键:", cacheKey);
 
-    // 尝试从缓存获取数据
-    const cachedData = await redis.get(cacheKey);
-    if (cachedData) {
-      console.log("从缓存获取订单数据");
-      return formatResponse(true, JSON.parse(cachedData));
-    }
+    // 暂时禁用缓存，直接从数据库获取数据
+    console.log("跳过缓存，直接从数据库获取数据");
 
     // 检查请求频率
     const rateLimitKey = `ratelimit:orders:${userId}`;
     const requestCount = await redis.incr(rateLimitKey);
+    console.log("当前请求次数:", requestCount);
+
     if (requestCount === 1) {
       await redis.expire(rateLimitKey, 60); // 60秒过期
     }
     if (requestCount > 30) {
       // 每分钟最多30次请求
+      console.log("请求频率超限");
       throw new Error("请求过于频繁，请稍后再试");
     }
 
@@ -491,12 +288,16 @@ export async function getUserOrdersController(request, userId, options = {}) {
 
     // 计算分页参数
     const skip = (page - 1) * pageSize;
+    console.log("查询参数:", { skip, limit: pageSize, status });
 
     // 获取用户订单
     const { orders, total } = await getOrdersByUser(userId, status, {
       skip,
       limit: pageSize,
     });
+
+    console.log("查询到的订单数量:", orders.length);
+    console.log("总订单数:", total);
 
     const result = {
       orders,
@@ -506,12 +307,14 @@ export async function getUserOrdersController(request, userId, options = {}) {
       totalItems: total,
     };
 
-    // 缓存结果（10秒）
-    await redis.set(cacheKey, JSON.stringify(result), "EX", 10);
+    // 暂时注释掉缓存逻辑
+    // await redis.set(cacheKey, JSON.stringify(result), "EX", 10);
+    // console.log("查询结果已缓存");
 
     return formatResponse(true, result);
   } catch (error) {
     console.error("获取用户订单列表失败:", error);
+    console.error("错误堆栈:", error.stack);
     return formatResponse(
       false,
       null,

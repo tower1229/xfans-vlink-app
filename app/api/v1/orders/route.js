@@ -55,9 +55,11 @@ export const GET = withAuthAPI(async (request) => {
 
     // 从认证中间件中获取用户信息
     const user = request.user;
+    console.log("当前用户信息:", user);
 
     // 验证用户信息
     if (!user || !user.userId) {
+      console.log("未授权访问: 缺少用户信息");
       return NextResponse.json(
         {
           success: false,
@@ -84,6 +86,8 @@ export const GET = withAuthAPI(async (request) => {
       );
     }
 
+    console.log("查询参数:", { page, pageSize, status, userId: user.userId });
+
     // 根据用户角色决定返回所有订单或仅用户自己的订单
     if (user.role === "admin") {
       // 管理员可以查看所有订单
@@ -101,6 +105,7 @@ export const GET = withAuthAPI(async (request) => {
       });
     }
   } catch (error) {
+    console.error("获取订单列表失败:", error);
     return createServerErrorResponse(error);
   }
 });

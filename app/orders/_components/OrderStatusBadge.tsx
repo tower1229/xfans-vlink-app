@@ -1,44 +1,25 @@
 import React from "react";
+import { OrderStatus, OrderStatusMap } from "../_lib/orderUtils";
 
 interface OrderStatusBadgeProps {
-  status: string;
+  status: number;
 }
 
-export const getStatusClass = (status: string) => {
-  switch (status) {
-    case "completed":
-      return "bg-green-100 text-green-800";
-    case "pending":
-      return "bg-blue-100 text-blue-800";
-    case "closed":
-      return "bg-red-100 text-red-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
-
-// Translate status to Chinese
-export const translateStatus = (status: string) => {
-  switch (status) {
-    case "pending":
-      return "待支付";
-    case "completed":
-      return "已支付";
-    case "closed":
-      return "已关闭";
-    default:
-      return status;
-  }
+// 状态样式映射
+const STATUS_STYLE_MAP = {
+  [OrderStatus.PENDING]: "bg-blue-100 text-blue-800",
+  [OrderStatus.COMPLETED]: "bg-green-100 text-green-800",
+  [OrderStatus.EXPIRED]: "bg-yellow-100 text-yellow-800",
+  [OrderStatus.FAILED]: "bg-red-100 text-red-800",
+  [OrderStatus.CLOSED]: "bg-gray-100 text-gray-800",
 };
 
 const OrderStatusBadge: React.FC<OrderStatusBadgeProps> = ({ status }) => {
   return (
     <span
-      className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusClass(
-        status
-      )}`}
+      className={`px-2 py-1 text-xs font-medium rounded-full ${STATUS_STYLE_MAP[status]}`}
     >
-      {translateStatus(status)}
+      {OrderStatusMap[status]}
     </span>
   );
 };

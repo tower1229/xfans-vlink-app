@@ -4,8 +4,10 @@ import { withAuthAPI } from "../../../../middleware";
 import {
   validateData,
   createServerErrorResponse,
+  createValidationErrorResponse,
 } from "../../../../utils/validation";
 import { verifySignature } from "../../../../middleware/eventListenerAuth";
+import { updateOrderStatusSchema } from "../../../../schemas/orderSchema";
 
 // 更新订单状态
 export async function PUT(request, { params }) {

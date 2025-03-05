@@ -6,19 +6,11 @@ import {
   createPublicClient,
   http,
   parseAbi,
-  parseEther,
-  parseUnits,
   formatUnits,
   encodeFunctionData,
-  type Address,
   type WalletClient,
   type PublicClient,
   type Hex,
-  type Chain,
-  type Account,
-  formatEther,
-  decodeAbiParameters,
-  parseAbiParameters,
 } from "viem";
 import { sepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
@@ -48,7 +40,7 @@ function ensureHex(value: string): `0x${string}` {
 
 export default function TestPage() {
   const [productId, setProductId] = useState(
-    "a252f77e-2bbb-4d42-93f1-f6c20c5edc7f"
+    "e658ca73-848d-4351-b7af-2a1f6648d5b1"
   );
   const [userAddress, setUserAddress] = useState("");
   const [chainId] = useState("11155111"); // 固定为Sepolia测试网
@@ -538,49 +530,35 @@ export default function TestPage() {
   return (
     <DashboardLayout>
       <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-6">订单测试页面</h1>
+        <h1 className="font-bold mb-6 text-2xl">订单测试页面</h1>
 
-        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-          <h2 className="text-xl font-semibold mb-4">钱包连接状态</h2>
-          <div className="p-3 bg-gray-100 rounded mb-4">
-            <p className="font-medium">当前地址: </p>
-            <p className="break-all">{userAddress || "未连接"}</p>
-          </div>
-          <button
-            onClick={connectWallet}
-            className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 w-full"
-          >
-            重新连接钱包
-          </button>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-          <h2 className="text-xl font-semibold mb-4">提交订单</h2>
+        <div className="bg-white rounded-lg shadow-md mb-6 p-6">
+          <h2 className="font-semibold text-xl mb-4">提交订单</h2>
 
           <div className="mb-4">
-            <label className="block mb-2">产品ID: </label>
+            <label className="mb-2 block">产品ID: </label>
             <input
               type="text"
               value={productId}
               onChange={(e) => setProductId(e.target.value)}
               placeholder="输入产品ID"
-              className="w-full p-2 border rounded"
+              className="border rounded w-full p-2"
             />
           </div>
 
           <div className="mb-6">
-            <label className="block mb-2">用户地址: </label>
+            <label className="mb-2 block">用户地址: </label>
             <input
               type="text"
               value={userAddress}
               onChange={(e) => setUserAddress(e.target.value)}
               placeholder="输入用户地址"
-              className="w-full p-2 border rounded"
+              className="border rounded w-full p-2"
             />
           </div>
 
           <div className="mb-6">
-            <div className="flex items-center mb-2">
+            <div className="flex mb-2 items-center">
               <input
                 type="checkbox"
                 id="useHighGas"
@@ -596,7 +574,7 @@ export default function TestPage() {
                 value={customGasLimit}
                 onChange={(e) => setCustomGasLimit(e.target.value)}
                 placeholder="输入Gas限制"
-                className="w-full p-2 border rounded"
+                className="border rounded w-full p-2"
               />
             )}
           </div>
@@ -604,15 +582,15 @@ export default function TestPage() {
           <button
             onClick={submitOrder}
             disabled={loading || !productId || !userAddress || !walletClient}
-            className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed w-full"
+            className="rounded bg-blue-500 text-white w-full py-2 px-4 hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             {loading ? "提交中..." : "提交订单"}
           </button>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold mb-2">状态:</h3>
-          <pre className="whitespace-pre-wrap break-words bg-gray-100 p-4 rounded">
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h3 className="font-semibold text-lg mb-2">状态:</h3>
+          <pre className="rounded bg-gray-100 p-4 whitespace-pre-wrap break-words">
             {txStatus}
           </pre>
         </div>

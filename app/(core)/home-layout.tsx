@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuth } from "../_hooks/useAuth";
+import { useAuth } from "@/_hooks/useAuth";
 
 interface HomeLayoutProps {
   children: React.ReactNode;
