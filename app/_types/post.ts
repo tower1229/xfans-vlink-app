@@ -9,11 +9,11 @@ export enum PostStatus {
 export interface Post {
   id: string;
   title: string;
+  price: string | bigint;
   image: string;
-  price: string;
   tokenAddress: string;
-  chainId: number;
   ownerAddress: string;
+  chainId: number;
   status?: PostStatus;
   createdAt?: string;
   updatedAt?: string;

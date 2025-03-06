@@ -26,9 +26,31 @@ import {
  * 统一的响应格式化函数
  */
 function formatResponse(success, data = null, error = null) {
+  // 处理 BigInt 序列化
+  const processData = (obj) => {
+    if (!obj) return obj;
+    if (typeof obj !== "object") return obj;
+
+    if (Array.isArray(obj)) {
+      return obj.map((item) => processData(item));
+    }
+
+    const processed = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (typeof value === "bigint") {
+        processed[key] = value.toString();
+      } else if (typeof value === "object" && value !== null) {
+        processed[key] = processData(value);
+      } else {
+        processed[key] = value;
+      }
+    }
+    return processed;
+  };
+
   return NextResponse.json({
     success,
-    data,
+    data: processData(data),
     ...(error && { error: { message: error.message, code: error.code } }),
   });
 }
@@ -126,42 +148,62 @@ export async function createOrderController(request, data) {
  * @returns {Promise<Response>} 响应对象
  */
 export async function getOrderByIdController(request, orderId) {
-  // 从令牌中获取用户信息
-  const user = await verifyJwtToken(request.token);
+  try {
+    // 从令牌中获取用户信息
+    const user = await verifyJwtToken(request.token);
 
-  // 获取订单信息
-  const order = await getOrderById(orderId);
-  if (!order) {
-    throw new NotFoundError("订单不存在");
+    // 获取订单信息
+    const order = await getOrderById(orderId);
+    if (!order) {
+      throw new NotFoundError("订单不存在");
+    }
+
+    // 检查是否是当前用户的订单或卖家
+    if (
+      order.userId !== user.userId &&
+      order.post?.ownerAddress !== user.walletAddress
+    ) {
+      throw new UnauthorizedError("您没有权限查看此订单");
+    }
+
+    // 返回订单信息
+    return NextResponse.json({
+      success: true,
+      data: {
+        id: order.id,
+        postId: order.postId,
+        userId: order.userId,
+        userAddress: order.user?.walletAddress,
+        amount: order.amount.toString(),
+        status: order.status,
+        txHash: order.txHash,
+        createdAt: order.createdAt,
+        expiresAt: order.expiresAt,
+        isExpired:
+          order.expiresAt < new Date() && order.status === OrderStatus.PENDING,
+        post: order.post
+          ? {
+              id: order.post.id,
+              title: order.post.title,
+              price: order.post.price.toString(),
+              image: order.post.image,
+              tokenAddress: order.post.tokenAddress,
+              ownerAddress: order.post.ownerAddress,
+              chainId: order.post.chainId,
+            }
+          : null,
+      },
+    });
+  } catch (error) {
+    console.error("获取订单详情失败:", error);
+    return formatResponse(
+      false,
+      null,
+      error instanceof OrderError
+        ? error
+        : new OrderError("获取订单详情失败", "FETCH_ORDER_ERROR")
+    );
   }
-
-  // 检查是否是当前用户的订单或卖家
-  if (
-    order.userId !== user.userId &&
-    order.ownerAddress !== user.walletAddress
-  ) {
-    throw new UnauthorizedError("您没有权限查看此订单");
-  }
-
-  // 返回订单信息
-  return NextResponse.json({
-    success: true,
-    data: {
-      id: order.id,
-      productId: order.productId,
-      userId: order.userId,
-      userAddress: order.userAddress,
-      price: order.price.toString(),
-      tokenAddress: order.tokenAddress,
-      ownerAddress: order.ownerAddress,
-      chainId: order.chainId,
-      status: order.status,
-      transactionHash: order.transactionHash,
-      createdAt: order.createdAt,
-      expiresAt: order.expiresAt,
-      isExpired: order.expiresAt < new Date() && order.status === "pending",
-    },
-  });
 }
 
 /**

@@ -61,42 +61,6 @@ function validateOrderData(orderData) {
 }
 
 /**
- * 格式化数据库订单对象
- * @param {Object} dbOrder - 数据库订单对象
- * @returns {Object} 格式化后的订单对象
- */
-function formatOrderFromDb(dbOrder) {
-  if (!dbOrder) return null;
-
-  const formattedOrder = {
-    id: dbOrder.id,
-    productId: dbOrder.post?.id || dbOrder.postId,
-    userId: dbOrder.userId,
-    userAddress: dbOrder.user?.walletAddress || null,
-    price: dbOrder.amount.toString(),
-    status: dbOrder.status,
-    transactionHash: dbOrder.txHash,
-    createdAt: dbOrder.createdAt,
-    updatedAt: dbOrder.updatedAt,
-    expiresAt: dbOrder.expiresAt,
-  };
-
-  if (dbOrder.post) {
-    formattedOrder.tokenAddress = dbOrder.post.tokenAddress;
-    formattedOrder.ownerAddress = dbOrder.post.ownerAddress;
-    formattedOrder.chainId = dbOrder.post.chainId;
-    formattedOrder.post = {
-      id: dbOrder.post.id,
-      title: dbOrder.post.title,
-      price: dbOrder.post.price.toString(),
-      image: dbOrder.post.image,
-    };
-  }
-
-  return formattedOrder;
-}
-
-/**
  * 更新过期订单状态
  * @returns {Promise<number>} 更新的订单数量
  */
@@ -143,13 +107,15 @@ export async function getOrdersByUser(userId, status, options = {}) {
     // 构建查询条件
     const query = {
       userId: userId,
-      // 移除status条件，先获取所有状态的订单
     };
+
+    if (status !== undefined && status !== null && status !== "all") {
+      query.status = parseInt(status);
+    }
 
     console.log("构建的查询条件:", JSON.stringify(query, null, 2));
 
     // 使用 Promise.all 并行查询数据和总数
-    console.log("开始执行数据库查询");
     const [orders, total] = await Promise.all([
       db.order.findMany({
         where: query,
@@ -180,67 +146,8 @@ export async function getOrdersByUser(userId, status, options = {}) {
       db.order.count({ where: query }),
     ]);
 
-    console.log("数据库查询完成");
-    // 转换BigInt为字符串
-    const safeOrders = orders.map((order) => ({
-      ...order,
-      amount: order.amount.toString(),
-      post: order.post
-        ? {
-            ...order.post,
-            price: order.post.price.toString(),
-          }
-        : null,
-    }));
-    console.log("原始查询结果:", JSON.stringify(safeOrders, null, 2));
-    console.log("查询到的订单数量:", orders.length);
-    console.log("订单总数:", total);
-
-    // 格式化订单数据
-    const formattedOrders = orders.map((order) => {
-      console.log("格式化订单:", order.id);
-      return {
-        id: order.id,
-        productId: order.postId,
-        userId: order.userId,
-        price: order.amount.toString(), // 确保转换BigInt
-        tokenAddress: order.post?.tokenAddress || null,
-        chainId: order.post?.chainId || null,
-        status: order.status,
-        statusText: OrderStatusMap[order.status] || "未知状态",
-        transactionHash: order.txHash || null,
-        createdAt: order.createdAt,
-        expiresAt: order.expiresAt,
-        isExpired:
-          order.status === OrderStatus.EXPIRED ||
-          (order.status === OrderStatus.PENDING &&
-            new Date(order.expiresAt) < new Date()),
-        post: order.post
-          ? {
-              id: order.post.id,
-              title: order.post.title,
-              price: order.post.price.toString(), // 确保转换BigInt
-              image: order.post.image,
-            }
-          : null,
-        user: order.user
-          ? {
-              id: order.user.id,
-              username: order.user.username,
-              walletAddress: order.user.walletAddress,
-            }
-          : null,
-      };
-    });
-
-    console.log("订单数据格式化完成");
-    console.log(
-      "格式化后的订单数据:",
-      JSON.stringify(formattedOrders, null, 2)
-    );
-
     return {
-      orders: formattedOrders,
+      orders,
       total,
     };
   } catch (error) {
@@ -293,7 +200,7 @@ export async function createNewOrder(orderData) {
       },
     });
 
-    return formatOrderFromDb(order);
+    return order;
   } catch (error) {
     console.error("创建订单失败:", error);
     if (error instanceof OrderError) throw error;
@@ -327,7 +234,7 @@ export async function getOrderById(orderId) {
       throw new OrderError("订单不存在", "ORDER_NOT_FOUND");
     }
 
-    return formatOrderFromDb(order);
+    return order;
   } catch (error) {
     console.error("获取订单详情失败:", error);
     if (error instanceof OrderError) throw error;
@@ -384,7 +291,7 @@ export async function updateOrderStatus(orderId, status, txHash = null) {
       },
     });
 
-    return formatOrderFromDb(updatedOrder);
+    return updatedOrder;
   } catch (error) {
     console.error("更新订单状态失败:", error);
     if (error instanceof OrderError) throw error;
@@ -408,11 +315,6 @@ export async function getAllOrders(options = {}) {
     const where = {};
     if (status !== undefined && status !== null && status !== "all") {
       where.status = parseInt(status);
-    } else {
-      // 如果没有指定状态，默认查询所有非过期状态的订单
-      where.status = {
-        not: OrderStatus.EXPIRED,
-      };
     }
 
     // 使用 Promise.all 并行查询数据和总数
@@ -430,33 +332,8 @@ export async function getAllOrders(options = {}) {
       db.order.count({ where }),
     ]);
 
-    // 格式化订单数据
-    const formattedOrders = orders.map((order) => ({
-      id: order.id,
-      productId: order.post?.id || order.postId,
-      userAddress: order.user?.walletAddress || null,
-      userId: order.userId,
-      price: order.amount.toString(),
-      tokenAddress: order.post?.tokenAddress || null,
-      chainId: order.post?.chainId || null,
-      status: order.status,
-      statusText: OrderStatusMap[order.status],
-      transactionHash: order.txHash,
-      createdAt: order.createdAt,
-      updatedAt: order.updatedAt,
-      expiresAt: order.expiresAt,
-      post: order.post
-        ? {
-            id: order.post.id,
-            title: order.post.title,
-            price: order.post.price.toString(),
-            image: order.post.image,
-          }
-        : null,
-    }));
-
     return {
-      orders: formattedOrders,
+      orders,
       total,
     };
   } catch (error) {

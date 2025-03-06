@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/_hooks/useAuth";
+import { BellIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 
 interface HomeLayoutProps {
   children: React.ReactNode;
@@ -20,64 +21,89 @@ export default function HomeLayout({ children }: HomeLayoutProps) {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-linear-to-br from-purple-50 to-pink-50">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-base-200 to-base-100">
       {/* 导航栏 */}
-      <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-xs">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <div className="text-3xl font-bold bg-linear-to-r from-purple-600 to-pink-600 text-transparent bg-clip-text">
-                X-Fans
-              </div>
+      <header className="bg-base-100/80 backdrop-blur-md sticky top-0 z-50 border-b border-base-200">
+        <div className="container mx-auto px-4">
+          <div className="navbar min-h-16">
+            <div className="navbar-start">
+              <Link href="/" className="btn btn-ghost normal-case text-2xl">
+                <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent font-bold">
+                  X-Fans
+                </span>
+              </Link>
             </div>
 
-            <nav className="hidden md:flex items-center space-x-8">
-              {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  href={item.path}
-                  className={`text-gray-700 hover:text-purple-600 transition-colors ${
-                    pathname === item.path
-                      ? "font-medium text-purple-600 border-b-2 border-purple-600"
-                      : ""
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              ))}
+            <nav className="navbar-center hidden lg:flex">
+              <ul className="menu menu-horizontal px-1 gap-2">
+                {navItems.map((item) => (
+                  <li key={item.path}>
+                    <Link
+                      href={item.path}
+                      className={`rounded-lg ${
+                        pathname === item.path
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "hover:bg-base-200"
+                      }`}
+                    >
+                      {item.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </nav>
 
-            <div className="flex items-center space-x-4">
+            <div className="navbar-end">
               {loading ? (
-                // 加载状态显示加载指示器
-                <div className="w-8 h-8 rounded-full border-2 border-purple-600 border-t-transparent animate-spin"></div>
+                <span className="loading loading-spinner loading-md text-primary"></span>
               ) : user ? (
-                <div className="flex items-center space-x-4">
-                  <Link
-                    href="/dashboard"
-                    className="px-4 py-2 rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors"
-                  >
-                    我的主页
-                  </Link>
-                  <button
-                    onClick={logout}
-                    className="text-gray-600 hover:text-gray-800"
-                  >
-                    退出
+                <div className="flex items-center gap-2">
+                  <button className="btn btn-ghost btn-circle">
+                    <div className="indicator">
+                      <BellIcon className="h-5 w-5" />
+                      <span className="badge badge-xs badge-primary indicator-item"></span>
+                    </div>
                   </button>
+                  <div className="dropdown dropdown-end">
+                    <label
+                      tabIndex={0}
+                      className="btn btn-ghost btn-circle avatar"
+                    >
+                      <div className="w-10 rounded-full">
+                        <img
+                          src={user.avatar || "/placeholder-avatar.jpg"}
+                          alt="avatar"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </label>
+                    <ul
+                      tabIndex={0}
+                      className="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52"
+                    >
+                      <li>
+                        <Link href="/dashboard" className="justify-between">
+                          我的主页
+                          <span className="badge badge-primary badge-sm">
+                            New
+                          </span>
+                        </Link>
+                      </li>
+                      <li>
+                        <Link href="/settings">账户设置</Link>
+                      </li>
+                      <li>
+                        <button onClick={logout}>退出登录</button>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               ) : (
-                <div className="flex items-center space-x-4">
-                  <Link
-                    href="/login"
-                    className="text-gray-700 hover:text-purple-600 transition-colors"
-                  >
+                <div className="flex items-center gap-4">
+                  <Link href="/login" className="btn btn-ghost">
                     登录
                   </Link>
-                  <Link
-                    href="/signup"
-                    className="px-4 py-2 rounded-full bg-linear-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-colors"
-                  >
+                  <Link href="/signup" className="btn btn-primary">
                     注册
                   </Link>
                 </div>
@@ -88,92 +114,74 @@ export default function HomeLayout({ children }: HomeLayoutProps) {
       </header>
 
       {/* 主要内容 */}
-      <main className="grow">{children}</main>
+      <main className="flex-1">{children}</main>
 
       {/* 页脚 */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="container mx-auto px-4">
+      <footer className="bg-neutral text-neutral-content">
+        <div className="container mx-auto px-4 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-xl font-bold mb-4 bg-linear-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text">
-                X-Fans
+              <h3 className="text-xl font-bold mb-4">
+                <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  X-Fans
+                </span>
               </h3>
-              <p className="text-gray-400">
+              <p className="text-neutral-content/70">
                 使用Vilink协议接入web3支付的内容创作平台，让创作者与粉丝建立更紧密的联系。
               </p>
             </div>
             <div>
-              <h4 className="text-lg font-medium mb-4">平台</h4>
+              <h4 className="footer-title">平台</h4>
               <ul className="space-y-2">
                 <li>
-                  <Link
-                    href="/about"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
+                  <Link href="/about" className="link link-hover">
                     关于我们
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    href="/careers"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
+                  <Link href="/careers" className="link link-hover">
                     加入我们
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    href="/blog"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
+                  <Link href="/blog" className="link link-hover">
                     博客
                   </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <h4 className="text-lg font-medium mb-4">支持</h4>
+              <h4 className="footer-title">支持</h4>
               <ul className="space-y-2">
                 <li>
-                  <Link
-                    href="/help"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
+                  <Link href="/help" className="link link-hover">
                     帮助中心
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    href="/terms"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
+                  <Link href="/terms" className="link link-hover">
                     服务条款
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    href="/privacy"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
+                  <Link href="/privacy" className="link link-hover">
                     隐私政策
                   </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <h4 className="text-lg font-medium mb-4">联系我们</h4>
+              <h4 className="footer-title">联系我们</h4>
               <ul className="space-y-2">
-                <li className="text-gray-400">邮箱: contact@x-fans.com</li>
-                <li className="text-gray-400">地址: 中国上海市</li>
+                <li className="text-neutral-content/70">
+                  邮箱: contact@x-fans.com
+                </li>
+                <li className="text-neutral-content/70">地址: 中国上海市</li>
               </ul>
               <div className="flex space-x-4 mt-4">
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  <span className="sr-only">Twitter</span>
+                <a href="#" className="btn btn-circle btn-ghost">
                   <svg
-                    className="h-6 w-6"
+                    className="h-5 w-5"
                     fill="currentColor"
                     viewBox="0 0 24 24"
                     aria-hidden="true"
@@ -181,13 +189,9 @@ export default function HomeLayout({ children }: HomeLayoutProps) {
                     <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
                   </svg>
                 </a>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  <span className="sr-only">GitHub</span>
+                <a href="#" className="btn btn-circle btn-ghost">
                   <svg
-                    className="h-6 w-6"
+                    className="h-5 w-5"
                     fill="currentColor"
                     viewBox="0 0 24 24"
                     aria-hidden="true"
@@ -202,7 +206,7 @@ export default function HomeLayout({ children }: HomeLayoutProps) {
               </div>
             </div>
           </div>
-          <div className="mt-8 pt-8 border-t border-gray-800 text-center text-gray-400">
+          <div className="mt-8 pt-8 border-t border-neutral-focus text-center text-neutral-content/70">
             <p>© 2024 X-Fans. 保留所有权利。</p>
           </div>
         </div>

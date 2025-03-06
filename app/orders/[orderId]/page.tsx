@@ -3,56 +3,29 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import DashboardLayout from "@/(core)/dashboard-layout";
-import { fetchWithAuth } from "@/_utils/api";
-
-interface OrderDetail {
-  id: string;
-  productId: string;
-  userAddress: string;
-  price: string;
-  tokenAddress: string;
-  ownerAddress: string;
-  chainId: number;
-  status: string;
-  transactionHash: string | null;
-  createdAt: string;
-  expiresAt: string;
-  isExpired: boolean;
-}
+import { getOrderById } from "@/_actions/orderActions";
+import { Order, OrderStatus, OrderStatusMap } from "@/_types/order";
 
 export default function OrderDetail() {
   const params = useParams();
   const router = useRouter();
   const orderId = params.orderId as string;
 
-  const [order, setOrder] = useState<OrderDetail | null>(null);
+  const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
 
-  // Fetch order details
+  // 获取订单详情
   useEffect(() => {
     const fetchOrderDetail = async () => {
       try {
         setLoading(true);
-        const response = await fetchWithAuth(`/api/v1/orders/${orderId}`);
-
-        if (!response.ok) {
-          throw new Error(`Error fetching order: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.success) {
-          setOrder(data.data);
-        } else {
-          throw new Error(data.message || "Failed to fetch order details");
-        }
+        const data = await getOrderById(orderId);
+        setOrder(data);
       } catch (err) {
-        console.error("Error fetching order details:", err);
-        setError(
-          err instanceof Error ? err.message : "An unknown error occurred"
-        );
+        console.error("获取订单详情失败:", err);
+        setError(err instanceof Error ? err.message : "未知错误");
       } finally {
         setLoading(false);
       }
@@ -63,217 +36,142 @@ export default function OrderDetail() {
     }
   }, [orderId]);
 
-  // Handle closing order
-  const handleCloseOrder = async () => {
-    if (!confirm("确定要关闭此订单吗？此操作不可撤销。")) {
-      return;
-    }
-
-    try {
-      setUpdating(true);
-
-      const payload = { status: "closed" };
-
-      const response = await fetchWithAuth(`/api/v1/orders/${orderId}/status`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error updating order: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Update the local order state
-        setOrder((prev) => (prev ? { ...prev, status: "closed" } : null));
-        alert("订单已成功关闭");
-      } else {
-        throw new Error(data.message || "Failed to close order");
-      }
-    } catch (err) {
-      console.error("Error closing order:", err);
-      alert(err instanceof Error ? err.message : "An unknown error occurred");
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  // Get status badge class
-  const getStatusClass = (status: string) => {
+  // 获取状态样式类名
+  const getStatusClass = (status: OrderStatus) => {
     switch (status) {
-      case "completed":
-        return "bg-green-100 text-green-800";
-      case "pending":
-        return "bg-blue-100 text-blue-800";
-      case "closed":
-        return "bg-red-100 text-red-800";
+      case OrderStatus.COMPLETED:
+        return "badge badge-success";
+      case OrderStatus.PENDING:
+        return "badge badge-warning";
+      case OrderStatus.EXPIRED:
+        return "badge badge-error";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "badge";
     }
   };
 
-  // Format date
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
+  // 格式化日期
+  const formatDate = (date: Date) => {
+    return date.toLocaleString("zh-CN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
   };
 
-  // Format address
-  const formatAddress = (address: string) => {
-    return `${address.substring(0, 6)}...${address.substring(38)}`;
-  };
-
-  // Translate status to Chinese
-  const translateStatus = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "待支付";
-      case "completed":
-        return "已支付";
-      case "closed":
-        return "已关闭";
-      default:
-        return status;
-    }
+  // 翻译状态
+  const translateStatus = (status: OrderStatus) => {
+    return OrderStatusMap[status];
   };
 
   return (
     <DashboardLayout>
-      <div className="bg-white rounded-lg shadow-sm">
-        <div className="border-b border-gray-200 py-4 px-6">
+      <div className="card bg-base-100">
+        <div className="card-body">
           <div className="flex justify-between items-center">
-            <h1 className="font-semibold text-xl text-gray-900">订单详情</h1>
+            <h2 className="card-title">订单详情</h2>
             <button
               onClick={() => router.back()}
-              className="text-gray-600 hover:text-gray-900"
+              className="btn btn-ghost btn-sm"
             >
               返回订单列表
             </button>
           </div>
-        </div>
 
-        {loading ? (
-          <div className="flex py-20 justify-center items-center">
-            <div className="rounded-full border-b-2 border-blue-500 h-12 animate-spin w-12"></div>
-          </div>
-        ) : error ? (
-          <div className="p-6">
-            <div className="border rounded-md bg-red-50 border-red-200 py-3 px-4 text-red-700">
-              <p>{error}</p>
-              <button
-                onClick={() => router.push("/orders")}
-                className="mt-2 text-sm text-red-600 underline"
+          {loading ? (
+            <div className="flex justify-center items-center py-20">
+              <span className="loading loading-spinner loading-lg text-primary"></span>
+            </div>
+          ) : error ? (
+            <div className="alert alert-error">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="stroke-current shrink-0 h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
               >
-                返回订单列表
-              </button>
-            </div>
-          </div>
-        ) : order ? (
-          <div className="p-6">
-            <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-              <div className="rounded-lg bg-gray-50 p-4">
-                <h2 className="font-medium text-lg mb-4 text-gray-900">
-                  订单信息
-                </h2>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm text-gray-500">订单 ID</p>
-                    <p className="font-medium text-sm text-gray-900">
-                      {order.id}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">状态</p>
-                    <span
-                      className={`px-2 py-1 text-xs rounded-full ${getStatusClass(
-                        order.status
-                      )}`}
-                    >
-                      {translateStatus(order.status)}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">创建时间</p>
-                    <p className="font-medium text-sm text-gray-900">
-                      {formatDate(order.createdAt)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">过期时间</p>
-                    <p className="font-medium text-sm text-gray-900">
-                      {formatDate(order.expiresAt)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">价格</p>
-                    <p className="font-medium text-sm text-gray-900">
-                      ¥{order.price}
-                    </p>
-                  </div>
-                </div>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <div>
+                <h3 className="font-bold">获取订单失败</h3>
+                <div className="text-sm">{error}</div>
               </div>
-
-              <div className="rounded-lg bg-gray-50 p-4">
-                <h2 className="font-medium text-lg mb-4 text-gray-900">
-                  区块链信息
-                </h2>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm text-gray-500">用户地址</p>
-                    <p className="font-medium text-sm text-gray-900 break-all">
-                      {order.userAddress}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">所有者地址</p>
-                    <p className="font-medium text-sm text-gray-900 break-all">
-                      {order.ownerAddress}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">代币地址</p>
-                    <p className="font-medium text-sm text-gray-900 break-all">
-                      {order.tokenAddress}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">链 ID</p>
-                    <p className="font-medium text-sm text-gray-900">
-                      {order.chainId}
-                    </p>
-                  </div>
-                  {order.transactionHash && (
+            </div>
+          ) : order ? (
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* 订单基本信息 */}
+              <div className="card bg-base-200">
+                <div className="card-body">
+                  <h3 className="card-title text-lg">订单信息</h3>
+                  <div className="space-y-4">
                     <div>
-                      <p className="text-sm text-gray-500">交易哈希</p>
-                      <p className="font-medium text-sm text-gray-900 break-all">
-                        {order.transactionHash}
-                      </p>
+                      <div className="text-sm opacity-70">订单编号</div>
+                      <div className="font-medium">{order.id}</div>
                     </div>
-                  )}
+                    <div>
+                      <div className="text-sm opacity-70">订单状态</div>
+                      <div className={getStatusClass(order.status)}>
+                        {translateStatus(order.status)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm opacity-70">创建时间</div>
+                      <div className="font-medium">
+                        {formatDate(order.createdAt)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm opacity-70">订单金额</div>
+                      <div className="font-medium">
+                        {order.amount.toString()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 内容信息 */}
+              <div className="card bg-base-200">
+                <div className="card-body">
+                  <h3 className="card-title text-lg">内容信息</h3>
+                  <div className="space-y-4">
+                    {order.post && (
+                      <>
+                        <div>
+                          <div className="text-sm opacity-70">内容标题</div>
+                          <div className="font-medium">{order.post.title}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm opacity-70">内容价格</div>
+                          <div className="font-medium">
+                            {order.post.price.toString()}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    {order.user && (
+                      <div>
+                        <div className="text-sm opacity-70">用户信息</div>
+                        <div className="font-medium">
+                          {order.user.username} ({order.user.walletAddress})
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-
-            {/* Actions */}
-            <div className="border-t border-gray-200 mt-6 pt-6">
-              <h2 className="font-medium text-lg mb-4 text-gray-900">操作</h2>
-              <div className="flex flex-wrap gap-3">
-                {order.status === "pending" && (
-                  <button
-                    onClick={handleCloseOrder}
-                    disabled={updating}
-                    className="rounded-md bg-red-600 text-white py-2 px-4 hover:bg-red-700 disabled:opacity-50"
-                  >
-                    {updating ? "处理中..." : "关闭订单"}
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="text-center p-6 text-gray-500">未找到订单</div>
-        )}
+          ) : null}
+        </div>
       </div>
     </DashboardLayout>
   );

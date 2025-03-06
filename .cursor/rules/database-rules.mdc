@@ -1,11 +1,11 @@
 ---
 description: 电子商务系统数据库设计最佳实践，确保数据完整性、性能和可扩展性。
-globs: app/api/prisma/*, app/api/utils/redis.mjs
+globs: app/api/**/*
 alwaysApply: false
 ---
 ---
 description: 电子商务系统数据库设计最佳实践，确保数据完整性、性能和可扩展性。
-globs: app/api/prisma/*, app/api/utils/redis.mjs
+globs: app/api/**/*
 alwaysApply: false
 ---
 

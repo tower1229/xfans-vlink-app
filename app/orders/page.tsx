@@ -7,12 +7,12 @@ import OrderList from "./_components/OrderList";
 import OrderTabs from "./_components/OrderTabs";
 import OrderPagination from "./_components/OrderPagination";
 import { fetchOrders, closeOrder } from "@/_actions/orderActions";
-import { ApiOrder, PaginationInfo } from "@/_types/order";
+import { Order, PaginationInfo } from "@/_types/order";
 import { OrderStatus } from "@/_utils/orderUtils";
 
 export default function Orders() {
   const [activeTab, setActiveTab] = useState<0 | 1 | 2 | 3 | 4 | "all">("all");
-  const [orders, setOrders] = useState<ApiOrder[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [closing, setClosing] = useState<string | null>(null);
@@ -31,14 +31,25 @@ export default function Orders() {
         setLoading(true);
         setError(null);
 
-        const result = await fetchOrders(
+        const {
+          orders: fetchedOrders,
+          currentPage,
+          totalPages,
+          totalItems,
+          pageSize,
+        } = await fetchOrders(
           activeTab,
           pagination.currentPage,
           pagination.pageSize
         );
 
-        setOrders(result.orders);
-        setPagination(result.pagination);
+        setOrders(fetchedOrders);
+        setPagination({
+          currentPage,
+          totalPages,
+          totalItems,
+          pageSize,
+        });
       } catch (err) {
         console.error("Error fetching orders:", err);
         setError(
@@ -100,7 +111,6 @@ export default function Orders() {
     <DashboardLayout>
       <div className="p-6">
         <div className="bg-white rounded-lg shadow-sm">
-
           <div className="flex justify-between items-center p-6">
             <h1 className="font-semibold text-xl text-gray-900">订单管理</h1>
             <button
@@ -112,7 +122,6 @@ export default function Orders() {
           </div>
 
           <OrderTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-
 
           <OrderList
             orders={orders}

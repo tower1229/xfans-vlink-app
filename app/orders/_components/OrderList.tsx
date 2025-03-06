@@ -1,27 +1,28 @@
 import React from "react";
 import OrderStatusBadge from "./OrderStatusBadge";
-import { ApiOrder } from "@/_types/order";
+import { Order } from "@/_types/order";
 
 // 格式化日期
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleString("zh-CN", {
+const formatDate = (date: Date | string) => {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return d.toLocaleString("zh-CN", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
   });
 };
 
-// 格式化金额
-const formatPrice = (price: number | string) => {
-  const numPrice = typeof price === "string" ? parseFloat(price) : price;
-  return `¥${numPrice.toFixed(2)}`;
+// 格式化价格
+const formatPrice = (price: string | bigint | number) => {
+  return price.toString();
 };
 
 interface OrderListProps {
-  orders: ApiOrder[];
+  orders: Order[];
   loading: boolean;
   error: string | null;
   closing: string | null;
@@ -115,10 +116,10 @@ const OrderList: React.FC<OrderListProps> = ({
                 {order.user?.username || "N/A"}
               </td>
               <td className="text-sm py-4 px-6 text-gray-500 whitespace-nowrap">
-                {formatDate(order.createdAt)}
+                {formatDate(new Date(order.createdAt))}
               </td>
               <td className="text-sm py-4 px-6 text-gray-500 whitespace-nowrap">
-                {formatPrice(order.price)}
+                {formatPrice(order.amount)}
               </td>
               <td className="py-4 px-6 whitespace-nowrap">
                 <OrderStatusBadge status={order.status} />

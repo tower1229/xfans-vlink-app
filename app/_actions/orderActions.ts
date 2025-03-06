@@ -1,11 +1,11 @@
 import { fetchWithAuth } from "@/_utils/api";
-import { ApiOrder, OrdersResponse, PaginationInfo } from "@/_types/order";
-
-interface ApiResponse<T> {
-  success: boolean;
-  message?: string;
-  data: T;
-}
+import {
+  Order,
+  OrderStatus,
+  OrdersResponse,
+  OrderListResponse,
+  ApiResponse,
+} from "../_types/order";
 
 /**
  * 获取订单列表
@@ -15,33 +15,31 @@ interface ApiResponse<T> {
  * @returns 订单列表和分页信息
  */
 export const fetchOrders = async (
-  status: ApiOrder["status"] | "all" = "all",
+  status: OrderStatus | "all" = "all",
   page: number = 1,
   pageSize: number = 10
-): Promise<{ orders: ApiOrder[]; pagination: PaginationInfo }> => {
+): Promise<{
+  orders: Order[];
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  pageSize: number;
+}> => {
   try {
     // Build the API URL with status filter and pagination
     let url = `/api/v1/orders?page=${page}&pageSize=${pageSize}`;
 
     // Add status filter if not "all"
     if (status !== "all") {
-      url += `&status=${status}`;
+      url += `&status=${status.toString()}`;
     }
 
-    const data = await fetchWithAuth<OrdersResponse>(url);
+    const response = await fetchWithAuth<OrdersResponse>(url);
 
-    if (data.success) {
-      return {
-        orders: data.data.orders,
-        pagination: {
-          currentPage: data.data.currentPage,
-          totalPages: data.data.totalPages,
-          totalItems: data.data.totalItems,
-          pageSize: data.data.pageSize,
-        },
-      };
+    if (response.success) {
+      return response.data;
     } else {
-      throw new Error(data.message || "Failed to fetch orders");
+      throw new Error(response.message || "Failed to fetch orders");
     }
   } catch (err) {
     console.error("Error fetching orders:", err);
@@ -102,3 +100,98 @@ export const exportOrders = async (status: string = "all"): Promise<Blob> => {
     throw err;
   }
 };
+
+/**
+ * 获取订单详情
+ * @param orderId 订单ID
+ * @returns Promise<Order>
+ * @throws Error 当请求失败时抛出错误
+ */
+export async function getOrderById(orderId: string): Promise<Order> {
+  const response = await fetchWithAuth<ApiResponse<Order>>(
+    `/api/v1/orders/${orderId}`
+  );
+
+  if (!response.success) {
+    throw new Error(response.message || `获取订单详情失败`);
+  }
+
+  // 处理 BigInt 序列化问题
+  const order = response.data;
+  return {
+    ...order,
+    amount: order.amount.toString(),
+    post: order.post
+      ? {
+          ...order.post,
+          price: order.post.price.toString(),
+        }
+      : undefined,
+  };
+}
+
+/**
+ * 获取用户订单列表
+ * @param params 查询参数
+ * @returns Promise<{ orders: Order[]; total: number }>
+ * @throws Error 当请求失败时抛出错误
+ */
+export async function getUserOrders(params?: {
+  page?: number;
+  limit?: number;
+  status?: Order["status"];
+}): Promise<{ orders: Order[]; total: number }> {
+  const searchParams = new URLSearchParams();
+  if (params?.page) searchParams.set("page", params.page.toString());
+  if (params?.limit) searchParams.set("limit", params.limit.toString());
+  if (params?.status) searchParams.set("status", params.status.toString());
+
+  const response: Response = await fetchWithAuth(
+    `/api/v1/orders?${searchParams.toString()}`
+  );
+
+  if (!response.ok) {
+    throw new Error(`获取订单列表失败: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  // 处理 BigInt 序列化问题
+  const processedOrders = data.orders.map((order: Order) => ({
+    ...order,
+    amount: order.amount.toString(),
+    post: order.post
+      ? {
+          ...order.post,
+          price: order.post.price.toString(),
+        }
+      : undefined,
+  }));
+
+  return {
+    orders: processedOrders,
+    total: data.total,
+  };
+}
+
+/**
+ * 取消订单
+ * @param orderId 订单ID
+ * @returns Promise<Order>
+ * @throws Error 当请求失败时抛出错误
+ */
+export async function cancelOrder(orderId: string): Promise<Order> {
+  const response: Response = await fetchWithAuth(
+    `/api/v1/orders/${orderId}/cancel`,
+    {
+      method: "POST",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`取消订单失败: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data as Order;
+}

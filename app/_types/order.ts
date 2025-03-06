@@ -1,16 +1,42 @@
-// API 响应中的订单类型
-export interface ApiOrder {
+import { Post } from "./post";
+import { User } from "./user";
+
+export interface Order {
   id: string;
-  user: {
-    username: string;
-    id: string;
-  };
-  price: number;
-  status: 0 | 1 | 2 | 3 | 4; // 使用 OrderStatus 中定义的所有状态值
-  createdAt: string;
-  userAddress: string;
-  productId: string;
-  transactionHash: string | null;
+  postId: string;
+  userId: string;
+  amount: string | bigint;
+  status: OrderStatus;
+  txHash: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  expiresAt: Date;
+  post?: Post;
+  user?: User;
+}
+
+// 订单状态枚举
+export enum OrderStatus {
+  PENDING = 0,
+  COMPLETED = 1,
+  EXPIRED = 2,
+  FAILED = 3,
+  CLOSED = 4,
+}
+
+// 订单状态文本映射
+export const OrderStatusMap: { [key in OrderStatus]: string } = {
+  [OrderStatus.PENDING]: "待支付",
+  [OrderStatus.COMPLETED]: "已完成",
+  [OrderStatus.EXPIRED]: "已过期",
+  [OrderStatus.FAILED]: "已失败",
+  [OrderStatus.CLOSED]: "已关闭",
+};
+
+// 订单列表响应接口
+export interface OrderListResponse {
+  orders: Order[];
+  total: number;
 }
 
 // 分页信息
@@ -31,7 +57,7 @@ export interface ApiResponse<T> {
 // 订单列表 API 响应
 export interface OrdersResponse
   extends ApiResponse<{
-    orders: ApiOrder[];
+    orders: Order[];
     currentPage: number;
     totalPages: number;
     totalItems: number;
