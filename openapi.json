@@ -1075,25 +1075,19 @@
             "CreateOrderRequest": {
                 "type": "object",
                 "required": [
-                    "postId",
-                    "buyerAddress",
-                    "transactionHash"
+                    "productId",
+                    "chainId"
                 ],
                 "properties": {
-                    "postId": {
+                    "productId": {
                         "type": "string",
-                        "description": "付费内容ID",
+                        "description": "产品ID",
                         "example": "123e4567-e89b-12d3-a456-426614174000"
                     },
-                    "buyerAddress": {
+                    "chainId": {
                         "type": "string",
-                        "description": "买家地址",
-                        "example": "0x1234567890123456789012345678901234567890"
-                    },
-                    "transactionHash": {
-                        "type": "string",
-                        "description": "交易哈希",
-                        "example": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+                        "description": "链ID",
+                        "example": "1"
                     }
                 }
             },
