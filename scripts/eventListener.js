@@ -1,10 +1,8 @@
-import { createPublicClient, http, parseAbiItem } from "viem";
-import { sepolia } from "viem/chains";
-import fetch from "node-fetch";
-import crypto from "crypto";
-import { config } from "dotenv";
-import { fileURLToPath } from "url";
-import { dirname } from "path";
+const { createPublicClient, http, parseAbiItem } = require("viem");
+const { sepolia } = require("viem/chains");
+const fetch = require("node-fetch");
+const crypto = require("crypto");
+const { config } = require("dotenv");
 
 // 初始化环境变量
 config();
