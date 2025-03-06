@@ -1,4 +1,9 @@
 ---
+description: 
+globs: 
+alwaysApply: true
+---
+---
 description: 本文档定义了项目的目录结构规范，确保代码组织的一致性和可维护性。
 globs: 
 alwaysApply: true
