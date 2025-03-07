@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import {
-  getPostById,
-  updatePost,
-  deletePost,
+  getPostByIdController as getPostById,
+  updatePostController as updatePost,
+  deletePostController as deletePost,
 } from "../../../controllers/postController";
 import { updatePostSchema } from "../../../schemas";
 import {

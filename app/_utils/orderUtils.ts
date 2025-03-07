@@ -3,6 +3,7 @@ import {
   encodePacked,
   encodeAbiParameters,
   parseAbiParameters,
+  Address,
 } from "viem";
 import { OrderError } from "./errors";
 
@@ -34,7 +35,7 @@ interface OrderIdResult {
 interface OrderData {
   orderId: string;
   productId: string;
-  userAddress: string;
+  userAddress: Address;
   price: number;
 }
 
@@ -46,7 +47,7 @@ interface OrderData {
  */
 export function generateOrderId(
   productId: string,
-  userAddress: string
+  userAddress: Address
 ): OrderIdResult {
   try {
     if (!productId || !userAddress) {
@@ -106,7 +107,7 @@ export async function generateOrderSignature(
       encodeAbiParameters(
         parseAbiParameters("bytes32, string, address, uint256"),
         [
-          orderData.orderId,
+          orderData.orderId as `0x${string}`,
           orderData.productId,
           orderData.userAddress,
           BigInt(orderData.price),

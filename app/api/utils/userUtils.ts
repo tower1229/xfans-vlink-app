@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { ValidationError } from "../../_utils/errors";
 import { SignJWT, jwtVerify } from "jose";
 import { cacheUtils } from "./redis.mjs";
-
+import { User, EditUser } from "@/_types/user";
 // JWT密钥，应该从环境变量中获取
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key_here"; // 使用固定的密钥，确保与客户端使用的密钥一致
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
@@ -15,7 +15,7 @@ const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || "7d"; /
  * @param {Object} userData 用户数据
  * @returns {Promise<Object>} 创建的用户
  */
-export async function createUser(userData) {
+export async function createUser(userData: EditUser) {
   try {
     const {
       username,
@@ -94,7 +94,7 @@ export async function createUser(userData) {
  * @param {string} username 用户名
  * @returns {Promise<Object|null>} 用户对象或null
  */
-export async function getUserByUsername(username) {
+export async function getUserByUsername(username?: string) {
   try {
     // 如果username为空，抛出验证错误
     if (!username) {
@@ -145,7 +145,7 @@ export async function getUserByUsername(username) {
  * @param {string} email 邮箱
  * @returns {Promise<Object|null>} 用户对象或null
  */
-export async function getUserByEmail(email) {
+export async function getUserByEmail(email: string) {
   try {
     // 如果email为空，直接返回null
     if (!email) return null;
@@ -191,7 +191,7 @@ export async function getUserByEmail(email) {
  * @param {string} walletAddress 钱包地址
  * @returns {Promise<Object|null>} 用户对象或null
  */
-export async function getUserByWalletAddress(walletAddress) {
+export async function getUserByWalletAddress(walletAddress: string) {
   try {
     // 使用Prisma的原生查询方法
     const user = await db.user.findFirst({
@@ -234,7 +234,7 @@ export async function getUserByWalletAddress(walletAddress) {
  * @param {number} id 用户ID
  * @returns {Promise<Object|null>} 用户对象或null
  */
-export async function getUserById(id) {
+export async function getUserById(id: string) {
   try {
     // 使用Prisma的原生查询方法
     const user = await db.user.findUnique({
@@ -268,7 +268,7 @@ export async function getUserById(id) {
  * @param {string} passwordHash 密码哈希
  * @returns {Promise<boolean>} 密码是否匹配
  */
-export async function verifyPassword(password, passwordHash) {
+export async function verifyPassword(password: string, passwordHash: string) {
   return await bcrypt.compare(password, passwordHash);
 }
 
@@ -277,7 +277,7 @@ export async function verifyPassword(password, passwordHash) {
  * @param {Object} user 用户对象
  * @returns {Object} 包含访问令牌和刷新令牌的对象
  */
-export async function generateTokens(user) {
+export async function generateTokens(user: User) {
   try {
     if (!user || !user.id) {
       throw new Error("无效的用户对象");
@@ -320,7 +320,7 @@ export async function generateTokens(user) {
  * @param {string} refreshToken 刷新令牌
  * @returns {Promise<void>}
  */
-export async function saveRefreshToken(userId, refreshToken) {
+export async function saveRefreshToken(userId: string, refreshToken: string) {
   try {
     // 计算过期时间
     const expiresAt = new Date();
@@ -345,7 +345,7 @@ export async function saveRefreshToken(userId, refreshToken) {
  * @param {string} refreshToken 刷新令牌
  * @returns {Promise<Object|null>} 用户对象或null
  */
-export async function verifyRefreshToken(refreshToken) {
+export async function verifyRefreshToken(refreshToken: string) {
   try {
     // 使用Prisma查询刷新令牌
     const token = await db.refreshToken.findFirst({
@@ -388,7 +388,7 @@ export async function verifyRefreshToken(refreshToken) {
  * @param {string} refreshToken 刷新令牌
  * @returns {Promise<void>}
  */
-export async function deleteRefreshToken(refreshToken) {
+export async function deleteRefreshToken(refreshToken: string) {
   try {
     // 使用Prisma删除刷新令牌
     await db.refreshToken.deleteMany({
@@ -407,7 +407,7 @@ export async function deleteRefreshToken(refreshToken) {
  * @param {string} token JWT令牌
  * @returns {Object|null} 解码后的令牌或null
  */
-export async function verifyJwtToken(token) {
+export async function verifyJwtToken(token: string) {
   try {
     console.log("验证JWT令牌:", token.substring(0, 10) + "...");
     console.log("使用的JWT密钥:", JWT_SECRET);
@@ -436,13 +436,8 @@ export async function verifyJwtToken(token) {
       walletAddress: payload.walletAddress,
     });
 
-    // 确保返回的用户信息包含walletAddress字段
-    if (payload && payload.walletAddress && !payload.wallet_address) {
-      payload.wallet_address = payload.walletAddress;
-    }
-
     return payload;
-  } catch (error) {
+  } catch (error: any) {
     console.error("验证JWT令牌失败:", error.name, error.message);
     if (error.code === "ERR_JWS_INVALID") {
       console.error("令牌签名无效");
@@ -459,10 +454,12 @@ export async function verifyJwtToken(token) {
  * @param {Object} userData 用户数据
  * @returns {Promise<Object>} 更新后的用户
  */
-export async function updateUser(userId, userData) {
+export async function updateUser(userId: string, userData: EditUser) {
   try {
     const { username, email, password, walletAddress, role } = userData;
-    const updateData = {};
+    const updateData: EditUser = {
+      password: "",
+    };
 
     // 构建更新数据
     if (username) updateData.username = username;
@@ -482,7 +479,7 @@ export async function updateUser(userId, userData) {
     }
 
     // 使用Prisma更新用户
-    const updatedUser = await db.user.update({
+    const updatedUser = (await db.user.update({
       where: {
         id: userId,
       },
@@ -496,21 +493,12 @@ export async function updateUser(userId, userData) {
         createdAt: true,
         updatedAt: true,
       },
-    });
+    })) as User;
 
     // 清除用户缓存
     await cacheUtils.del(`user:${userId}`);
 
-    // 转换为与旧代码兼容的格式
-    return {
-      id: updatedUser.id,
-      username: updatedUser.username,
-      email: updatedUser.email,
-      wallet_address: updatedUser.walletAddress,
-      role: updatedUser.role,
-      created_at: updatedUser.createdAt,
-      updated_at: updatedUser.updatedAt,
-    };
+    return updatedUser;
   } catch (error) {
     console.error("更新用户失败:", error);
     throw error;
@@ -522,7 +510,7 @@ export async function updateUser(userId, userData) {
  * @param {number} userId 用户ID
  * @returns {Promise<boolean>} 是否成功删除
  */
-export async function deleteUser(userId) {
+export async function deleteUser(userId: string) {
   try {
     // 使用Prisma删除用户
     const deletedUser = await db.user.delete({
@@ -595,30 +583,5 @@ export async function cleanupExpiredRefreshTokens() {
   } catch (error) {
     console.error("清理过期刷新令牌失败:", error);
     throw error;
-  }
-}
-
-/**
- * 根据ID检查用户是否存在
- * @param {string} userId 用户ID
- * @returns {Promise<boolean>} 用户是否存在
- */
-export async function checkUserExists(userId) {
-  try {
-    if (!userId) return false;
-
-    const user = await db.user.findUnique({
-      where: {
-        id: userId,
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    return !!user;
-  } catch (error) {
-    console.error(`检查用户 ${userId} 是否存在失败:`, error);
-    return false;
   }
 }

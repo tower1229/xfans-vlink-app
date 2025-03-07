@@ -16,6 +16,7 @@ import { sepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import DashboardLayout from "../(core)/dashboard-layout";
 import { fetchWithAuth } from "../_utils/api";
+import { createOrder } from "../_actions/orderActions";
 
 // 定义交易参数接口
 interface TransactionParams {
@@ -365,28 +366,18 @@ export default function TestPage() {
       setTxStatus("提交订单中...");
 
       // 调用创建订单API，使用fetchWithAuth替代fetch
-      const response = await fetchWithAuth("/api/v1/orders", {
-        method: "POST",
-        body: JSON.stringify({
-          productId,
-          chainId,
-        }),
-      });
+      const response = await createOrder(productId, chainId);
 
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error?.message || "创建订单失败");
+      if (!response.success) {
+        throw new Error(response?.message || "创建订单失败");
       }
 
       setTxStatus("订单已创建，准备支付...");
 
       // 获取交易参数
-      const transaction = data.data.transaction;
-
-      // 解码交易数据以便于日志显示
-      const decodedData = decodeTransactionData(transaction.data);
-      setTxStatus(`订单已创建，交易数据解码:\n${decodedData}`);
+      const transaction = JSON.parse(
+        Buffer.from(response.data.transaction, "base64").toString("utf-8")
+      );
 
       // 判断是否为ERC20支付 - 直接从transaction对象判断
       // 如果value为0且函数选择器匹配payWithERC20，则为ERC20支付

@@ -8,3 +8,12 @@ export interface User {
   createdAt: string;
   updatedAt: string;
 }
+
+export type EditUser = {
+  username?: string;
+  email?: string;
+  password: string;
+  walletAddress?: string;
+  role?: string;
+  newPassword?: string;
+};

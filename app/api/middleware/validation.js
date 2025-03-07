@@ -84,10 +84,7 @@ export function withValidation(schema) {
           return NextResponse.json(
             {
               success: false,
-              error: {
-                code: "INVALID_JSON",
-                message: "无效的JSON格式",
-              },
+              message: "无效的JSON格式",
             },
             { status: 400 }
           );
@@ -102,10 +99,7 @@ export function withValidation(schema) {
           return NextResponse.json(
             {
               success: false,
-              error: {
-                code: "DATABASE_CONNECTION_ERROR",
-                message: "数据库连接失败，请稍后再试",
-              },
+              message: "数据库连接失败，请稍后再试",
             },
             { status: 503 }
           );
@@ -200,10 +194,7 @@ export function createServerErrorResponse(error) {
   return NextResponse.json(
     {
       success: false,
-      error: {
-        code: errorCode,
-        message: message,
-      },
+      message: message,
     },
     { status: statusCode }
   );

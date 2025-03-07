@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/_hooks/useAuth";
-import { fetchWithAuth } from "@/_utils/api";
 import { userStore } from "@/_stores";
 import { observer } from "mobx-react-lite";
+import { updateUser } from "@/_actions/userActions";
 
 const SettingsPage = observer(() => {
   const { user } = useAuth();
@@ -91,12 +91,7 @@ const SettingsPage = observer(() => {
       }
 
       // 发送请求
-      const response = await fetchWithAuth("/api/v1/users/settings", {
-        method: "PUT",
-        body: JSON.stringify(dataToSend),
-      });
-
-      const result = await response.json();
+      const result = await updateUser(dataToSend);
 
       if (result.success) {
         // 更新 MobX store 中的用户信息
@@ -111,7 +106,7 @@ const SettingsPage = observer(() => {
           confirmPassword: "",
         });
       } else {
-        setError(result.error?.message || "更新设置失败");
+        setError(result?.message || "更新设置失败");
       }
     } catch (err) {
       setError("更新设置时发生错误");

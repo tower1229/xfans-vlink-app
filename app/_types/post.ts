@@ -30,21 +30,3 @@ export interface PostFormData {
   ownerAddress: string;
   status?: PostStatus;
 }
-
-// 定义 API 响应类型
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  error?: {
-    code?: string;
-    message: string;
-  };
-}
-
-// 自定义错误类
-export class PostError extends Error {
-  constructor(message: string, public code?: string, public status?: number) {
-    super(message);
-    this.name = "PostError";
-  }
-}

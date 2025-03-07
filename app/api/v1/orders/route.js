@@ -22,11 +22,7 @@ export const POST = withAuthAPI(async (request) => {
     if (!validation.success) {
       return NextResponse.json({
         success: false,
-        error: {
-          message: "数据验证失败",
-          code: "VALIDATION_ERROR",
-          details: validation.errors,
-        },
+        message: "数据验证失败",
       });
     }
 
@@ -36,10 +32,7 @@ export const POST = withAuthAPI(async (request) => {
     console.error("处理创建订单请求失败:", error);
     return NextResponse.json({
       success: false,
-      error: {
-        message: "创建订单失败",
-        code: "INTERNAL_ERROR",
-      },
+      message: "创建订单失败",
     });
   }
 });
@@ -63,10 +56,7 @@ export const GET = withAuthAPI(async (request) => {
       return NextResponse.json(
         {
           success: false,
-          error: {
-            message: "未授权访问",
-            code: "UNAUTHORIZED",
-          },
+          message: "未授权访问",
         },
         { status: 401 }
       );
@@ -77,10 +67,7 @@ export const GET = withAuthAPI(async (request) => {
       return NextResponse.json(
         {
           success: false,
-          error: {
-            message: "无效的分页参数",
-            code: "INVALID_PAGINATION",
-          },
+          message: "无效的分页参数",
         },
         { status: 400 }
       );

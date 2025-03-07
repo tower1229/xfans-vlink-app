@@ -33,7 +33,7 @@ export async function PUT(request, { params }) {
       // 检查时间戳和签名是否存在
       if (!timestamp || !signature) {
         return NextResponse.json(
-          { success: false, error: "缺少必要的认证信息：时间戳或签名" },
+          { success: false, message: "缺少必要的认证信息：时间戳或签名" },
           { status: 401 }
         );
       }
@@ -46,7 +46,7 @@ export async function PUT(request, { params }) {
       );
       if (!isValidSignature) {
         return NextResponse.json(
-          { success: false, error: "无效的请求签名" },
+          { success: false, message: "无效的请求签名" },
           { status: 401 }
         );
       }
@@ -69,10 +69,7 @@ export async function PUT(request, { params }) {
     return NextResponse.json(
       {
         success: false,
-        error: {
-          code: "INTERNAL_SERVER_ERROR",
-          message: error.message || "服务器内部错误",
-        },
+        message: error.message || "服务器内部错误",
       },
       { status: 500 }
     );

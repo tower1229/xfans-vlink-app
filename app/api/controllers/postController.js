@@ -155,10 +155,7 @@ export async function updatePostController(request, postId, data) {
     return NextResponse.json(
       {
         success: false,
-        error: {
-          code: "VALIDATION_ERROR",
-          message: "没有提供要更新的字段",
-        },
+        message: "没有提供要更新的字段",
       },
       { status: 400 }
     );
@@ -226,10 +223,7 @@ export async function deletePostController(request, postId) {
       return NextResponse.json(
         {
           success: false,
-          error: {
-            code: "DELETE_FAILED",
-            message: "付费内容删除失败",
-          },
+          message: "付费内容删除失败",
         },
         { status: 500 }
       );

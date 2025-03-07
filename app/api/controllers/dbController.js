@@ -22,10 +22,7 @@ export async function initDatabaseController(request) {
     return NextResponse.json(
       {
         success: false,
-        error: {
-          code: "DB_INIT_FAILED",
-          message: "数据库初始化失败",
-        },
+        message: "数据库初始化失败",
       },
       { status: 500 }
     );

@@ -25,7 +25,7 @@ export function verifyEventListenerRequest(request) {
     // 检查必要的头信息是否存在
     if (!apiKey || !timestamp || !signature) {
       return NextResponse.json(
-        { success: false, error: "缺少必要的认证头信息" },
+        { success: false, message: "缺少必要的认证头信息" },
         { status: 401 }
       );
     }
@@ -34,7 +34,7 @@ export function verifyEventListenerRequest(request) {
     const validApiKey = process.env.EVENT_LISTENER_API_KEY;
     if (!validApiKey || apiKey !== validApiKey) {
       return NextResponse.json(
-        { success: false, error: "无效的API密钥" },
+        { success: false, message: "无效的API密钥" },
         { status: 401 }
       );
     }
@@ -48,7 +48,7 @@ export function verifyEventListenerRequest(request) {
 
     if (isNaN(requestTime) || timeDiff > maxTimeDiff) {
       return NextResponse.json(
-        { success: false, error: "请求已过期或时间戳无效" },
+        { success: false, message: "请求已过期或时间戳无效" },
         { status: 401 }
       );
     }
@@ -58,7 +58,7 @@ export function verifyEventListenerRequest(request) {
   } catch (error) {
     console.error("事件监听器认证错误:", error);
     return NextResponse.json(
-      { success: false, error: "认证过程中发生错误" },
+      { success: false, message: "认证过程中发生错误" },
       { status: 500 }
     );
   }

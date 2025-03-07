@@ -2,11 +2,11 @@ import React from "react";
 import { OrderStatus, OrderStatusMap } from "@/_utils/orderUtils";
 
 interface OrderStatusBadgeProps {
-  status: number;
+  status: OrderStatus;
 }
 
 // 状态样式映射
-const STATUS_STYLE_MAP = {
+const STATUS_STYLE_MAP: Record<OrderStatus, string> = {
   [OrderStatus.PENDING]: "bg-blue-100 text-blue-800",
   [OrderStatus.COMPLETED]: "bg-green-100 text-green-800",
   [OrderStatus.EXPIRED]: "bg-yellow-100 text-yellow-800",

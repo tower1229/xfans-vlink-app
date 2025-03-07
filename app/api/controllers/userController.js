@@ -140,10 +140,7 @@ export async function refreshTokenController(request, data) {
       return NextResponse.json(
         {
           success: false,
-          error: {
-            code: "REFRESH_TOKEN_REQUIRED",
-            message: "刷新令牌是必需的",
-          },
+          message: "刷新令牌是必需的",
         },
         { status: 400 }
       );
@@ -156,10 +153,7 @@ export async function refreshTokenController(request, data) {
       return NextResponse.json(
         {
           success: false,
-          error: {
-            code: "INVALID_REFRESH_TOKEN",
-            message: "无效或过期的刷新令牌",
-          },
+          message: "无效或过期的刷新令牌",
         },
         { status: 401 }
       );
@@ -191,10 +185,7 @@ export async function refreshTokenController(request, data) {
     return NextResponse.json(
       {
         success: false,
-        error: {
-          code: "REFRESH_TOKEN_FAILED",
-          message: "刷新令牌失败",
-        },
+        message: "刷新令牌失败",
       },
       { status: 500 }
     );
@@ -351,10 +342,7 @@ export async function updateUserSettingsController(request, data) {
         return NextResponse.json(
           {
             success: false,
-            error: {
-              code: "INVALID_PASSWORD",
-              message: "当前密码不正确",
-            },
+            message: "当前密码不正确",
           },
           { status: 400 }
         );

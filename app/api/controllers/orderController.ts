@@ -21,13 +21,26 @@ import {
   buildPaymentTransaction,
   generateOrderId,
 } from "../utils/orderUtils";
+import { ActionPostResponse } from "@/_types/vlink";
+import { ApiResponse } from "@/_types/api";
+import { Order } from "@/_types/order";
+import { User } from "@/_types/user";
+import { JwtPayload } from "@/_types/jwt";
+
+interface AuthenticatedRequest extends Request {
+  user: { userId: string };
+}
 
 /**
  * 统一的响应格式化函数
  */
-function formatResponse(success, data = null, error = null) {
+function formatResponse<T>(
+  success: boolean,
+  data: T | null,
+  error?: Error | null
+) {
   // 处理 BigInt 序列化
-  const processData = (obj) => {
+  const processData = (obj: any): any => {
     if (!obj) return obj;
     if (typeof obj !== "object") return obj;
 
@@ -35,7 +48,7 @@ function formatResponse(success, data = null, error = null) {
       return obj.map((item) => processData(item));
     }
 
-    const processed = {};
+    const processed: Record<string, any> = {};
     for (const [key, value] of Object.entries(obj)) {
       if (typeof value === "bigint") {
         processed[key] = value.toString();
@@ -51,7 +64,7 @@ function formatResponse(success, data = null, error = null) {
   return NextResponse.json({
     success,
     data: processData(data),
-    ...(error && { error: { message: error.message, code: error.code } }),
+    ...(error && { message: error.message }),
   });
 }
 
@@ -61,7 +74,10 @@ function formatResponse(success, data = null, error = null) {
  * @param {Object} data 订单数据
  * @returns {Promise<Response>} 响应对象
  */
-export async function createOrderController(request, data) {
+export async function createOrderController(
+  request: AuthenticatedRequest,
+  data: { productId: string }
+): Promise<NextResponse<ApiResponse<ActionPostResponse>>> {
   try {
     const user = request.user; // 从认证中间件获取
 
@@ -89,7 +105,7 @@ export async function createOrderController(request, data) {
       orderId: generateOrderId(), // 使用我们修改过的 generateOrderId 函数
     };
 
-    const order = await createNewOrder(orderData);
+    const order = (await createNewOrder(orderData)) as Order;
 
     // 构建支付交易数据
     const timestamp = Math.floor(Date.now() / 1000);
@@ -102,15 +118,23 @@ export async function createOrderController(request, data) {
       );
     }
 
+    if (!order.post) {
+      throw new OrderError("产品不存在", "PRODUCT_NOT_FOUND");
+    }
+
+    if (!order.user) {
+      throw new OrderError("用户不存在", "USER_NOT_FOUND");
+    }
+
     const encodedOrderData = encodeAbiParameters(
       parseAbiParameters("bytes32, uint256, address, address, uint32, uint64"),
       [
         `0x${order.id.replace(/-/g, "")}`, // 直接使用完整的32字节订单ID
-        BigInt(order.price.toString()),
-        order.tokenAddress,
-        order.ownerAddress,
+        BigInt(order.amount.toString()),
+        order.post?.tokenAddress as `0x${string}`,
+        order.user?.walletAddress as `0x${string}`,
         timestamp,
-        BigInt(order.chainId),
+        BigInt(order.post?.chainId || 0),
       ]
     );
 
@@ -126,8 +150,8 @@ export async function createOrderController(request, data) {
     );
 
     return formatResponse(true, {
-      order,
-      transaction,
+      transaction: Buffer.from(JSON.stringify(transaction)).toString("base64"),
+      chain: order.post.chainId,
     });
   } catch (error) {
     console.error("创建订单失败:", error);
@@ -147,15 +171,22 @@ export async function createOrderController(request, data) {
  * @param {string} orderId 订单ID
  * @returns {Promise<Response>} 响应对象
  */
-export async function getOrderByIdController(request, orderId) {
+export async function getOrderByIdController(
+  request: { token: string },
+  orderId: string
+) {
   try {
     // 从令牌中获取用户信息
-    const user = await verifyJwtToken(request.token);
+    const user = (await verifyJwtToken(request.token)) as unknown as JwtPayload;
+
+    if (!user) {
+      throw new OrderError("未授权访问", "UNAUTHORIZED");
+    }
 
     // 获取订单信息
-    const order = await getOrderById(orderId);
+    const order = (await getOrderById(orderId)) as Order;
     if (!order) {
-      throw new NotFoundError("订单不存在");
+      throw new OrderError("订单不存在", "ORDER_NOT_FOUND");
     }
 
     // 检查是否是当前用户的订单或卖家
@@ -163,7 +194,7 @@ export async function getOrderByIdController(request, orderId) {
       order.userId !== user.userId &&
       order.post?.ownerAddress !== user.walletAddress
     ) {
-      throw new UnauthorizedError("您没有权限查看此订单");
+      throw new OrderError("您没有权限查看此订单", "UNAUTHORIZED");
     }
 
     // 返回订单信息
@@ -213,11 +244,15 @@ export async function getOrderByIdController(request, orderId) {
  * @param {Object} data 更新数据
  * @returns {Promise<Response>} 响应对象
  */
-export async function updateOrderStatusController(request, orderId, data) {
+export async function updateOrderStatusController(
+  request: AuthenticatedRequest,
+  orderId: string,
+  data: { status: string; transactionHash: string }
+) {
   // 获取订单信息
-  const order = await getOrderById(orderId);
+  const order = (await getOrderById(orderId)) as Order;
   if (!order) {
-    throw new NotFoundError("订单不存在");
+    throw new OrderError("订单不存在", "ORDER_NOT_FOUND");
   }
 
   const { status, transactionHash } = data;
@@ -226,11 +261,14 @@ export async function updateOrderStatusController(request, orderId, data) {
   const statusMap = {
     closed: OrderStatus.CLOSED,
     completed: OrderStatus.COMPLETED,
-  };
+  } as const;
 
-  const newStatus = statusMap[status];
+  const newStatus = statusMap[status as keyof typeof statusMap];
   if (newStatus === undefined) {
-    throw new ValidationError("订单只能被更新为已关闭或已完成状态");
+    throw new OrderError(
+      "订单只能被更新为已关闭或已完成状态",
+      "INVALID_STATUS"
+    );
   }
 
   // 验证当前订单状态
@@ -238,36 +276,42 @@ export async function updateOrderStatusController(request, orderId, data) {
     newStatus === OrderStatus.CLOSED &&
     order.status !== OrderStatus.PENDING
   ) {
-    throw new ValidationError("只有待支付状态的订单可以被关闭");
+    throw new OrderError("只有待支付状态的订单可以被关闭", "INVALID_STATUS");
   }
 
   if (
     newStatus === OrderStatus.COMPLETED &&
     order.status !== OrderStatus.PENDING
   ) {
-    throw new ValidationError("只有待支付状态的订单可以被标记为已完成");
+    throw new OrderError(
+      "只有待支付状态的订单可以被标记为已完成",
+      "INVALID_STATUS"
+    );
   }
 
   // 如果是完成状态，需要提供交易哈希
   if (newStatus === OrderStatus.COMPLETED && !transactionHash) {
-    throw new ValidationError("更新为已完成状态时必须提供交易哈希");
+    throw new OrderError(
+      "更新为已完成状态时必须提供交易哈希",
+      "INVALID_STATUS"
+    );
   }
 
   // 更新订单状态和交易哈希（如果有）
-  const updatedOrder = await updateOrderStatus(
+  const updatedOrder = (await updateOrderStatus(
     orderId,
     newStatus,
-    newStatus === OrderStatus.COMPLETED ? transactionHash : null
-  );
+    newStatus === OrderStatus.COMPLETED ? transactionHash : undefined
+  )) as Order;
 
   // 返回更新后的订单
   return formatResponse(true, {
     id: updatedOrder.id,
     status: updatedOrder.status,
     statusText: OrderStatusMap[updatedOrder.status],
-    productId: updatedOrder.productId,
-    userAddress: updatedOrder.userAddress,
-    transactionHash: updatedOrder.transactionHash,
+    productId: updatedOrder.post?.id,
+    userAddress: updatedOrder.user?.walletAddress,
+    transactionHash: updatedOrder.txHash,
     createdAt: updatedOrder.createdAt,
     expiresAt: updatedOrder.expiresAt,
   });
@@ -280,28 +324,40 @@ export async function updateOrderStatusController(request, orderId, data) {
  * @param {Object} options 分页选项
  * @returns {Promise<Response>} 响应对象
  */
-export async function getUserOrdersController(request, userId, options = {}) {
+export async function getUserOrdersController(
+  request: AuthenticatedRequest,
+  userId: string,
+  options = {}
+) {
   try {
     console.log("开始获取用户订单列表");
     console.log("用户ID:", userId);
     console.log("请求选项:", options);
 
-    const { page = 1, pageSize = 10, status } = options;
+    const {
+      page = 1,
+      pageSize = 10,
+      status,
+    } = options as {
+      page?: number;
+      pageSize?: number;
+      status?: string;
+    };
 
     // 参数验证
     if (!userId) {
       console.log("错误: 用户ID为空");
-      throw new ValidationError("用户ID不能为空", "MISSING_USER_ID");
+      throw new OrderError("用户ID不能为空", "MISSING_USER_ID");
     }
 
     if (page < 1) {
       console.log("错误: 无效的页码:", page);
-      throw new ValidationError("页码必须大于0", "INVALID_PAGE_NUMBER");
+      throw new OrderError("页码必须大于0", "INVALID_PAGE_NUMBER");
     }
 
     if (pageSize < 1 || pageSize > 100) {
       console.log("错误: 无效的每页数量:", pageSize);
-      throw new ValidationError("每页数量必须在1-100之间", "INVALID_PAGE_SIZE");
+      throw new OrderError("每页数量必须在1-100之间", "INVALID_PAGE_SIZE");
     }
 
     // 构建缓存键
@@ -333,7 +389,7 @@ export async function getUserOrdersController(request, userId, options = {}) {
     console.log("查询参数:", { skip, limit: pageSize, status });
 
     // 获取用户订单
-    const { orders, total } = await getOrdersByUser(userId, status, {
+    const { orders, total } = await getOrdersByUser(userId, status || "all", {
       skip,
       limit: pageSize,
     });
@@ -354,7 +410,7 @@ export async function getUserOrdersController(request, userId, options = {}) {
     // console.log("查询结果已缓存");
 
     return formatResponse(true, result);
-  } catch (error) {
+  } catch (error: any) {
     console.error("获取用户订单列表失败:", error);
     console.error("错误堆栈:", error.stack);
     return formatResponse(
@@ -376,10 +432,21 @@ export async function getUserOrdersController(request, userId, options = {}) {
  * @param {Object} options 分页选项
  * @returns {Promise<Response>} 响应对象
  */
-export async function getAllOrdersController(request, options = {}) {
+export async function getAllOrdersController(
+  request: AuthenticatedRequest,
+  options = {}
+) {
   try {
     // 获取查询参数
-    const { page = 1, pageSize = 10, status } = options;
+    const {
+      page = 1,
+      pageSize = 10,
+      status,
+    } = options as {
+      page?: number;
+      pageSize?: number;
+      status?: string;
+    };
 
     // 更新过期订单（不阻塞主流程）
     updateExpiredOrders().catch(console.error);

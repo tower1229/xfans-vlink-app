@@ -1,11 +1,7 @@
 import { fetchWithAuth } from "@/_utils/api";
-import {
-  Order,
-  OrderStatus,
-  OrdersResponse,
-  OrderListResponse,
-  ApiResponse,
-} from "../_types/order";
+import { Order, OrderStatus, OrdersResponse } from "@/_types/order";
+import { ApiResponse } from "@/_types/api";
+import { ActionPostResponse } from "@/_types/vlink";
 
 /**
  * 获取订单列表
@@ -43,6 +39,37 @@ export const fetchOrders = async (
     }
   } catch (err) {
     console.error("Error fetching orders:", err);
+    throw err;
+  }
+};
+
+/**
+ * 创建订单
+ * @param productId 商品ID
+ * @param chainId 链ID
+ * @returns 操作结果
+ */
+export const createOrder = async (
+  productId: string,
+  chainId: string
+): Promise<ApiResponse<ActionPostResponse>> => {
+  try {
+    const payload = {
+      productId,
+      chainId,
+    };
+
+    const response = await fetchWithAuth<ApiResponse<ActionPostResponse>>(
+      "/api/v1/orders",
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }
+    );
+
+    return response;
+  } catch (err) {
+    console.error("Error creating order:", err);
     throw err;
   }
 };

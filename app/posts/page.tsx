@@ -3,7 +3,12 @@
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/(core)/dashboard-layout";
 import { Post, PostFormData } from "@/_types/post";
-import { fetchPosts, createPost, updatePost, deletePost } from "@/_actions/postActions";
+import {
+  fetchPosts,
+  createPost,
+  updatePost,
+  deletePost,
+} from "@/_actions/postActions";
 
 export default function Posts() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -102,7 +107,8 @@ export default function Posts() {
     setFormData({
       title: post.title,
       image: post.image,
-      price: post.price,
+      price:
+        typeof post.price === "bigint" ? post.price.toString() : post.price,
       tokenAddress: post.tokenAddress,
       chainId: post.chainId,
       ownerAddress: post.ownerAddress,

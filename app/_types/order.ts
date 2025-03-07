@@ -1,5 +1,6 @@
 import { Post } from "./post";
 import { User } from "./user";
+import { ApiResponse } from "./api";
 
 export interface Order {
   id: string;
@@ -45,13 +46,6 @@ export interface PaginationInfo {
   totalPages: number;
   totalItems: number;
   pageSize: number;
-}
-
-// API 响应数据结构
-export interface ApiResponse<T> {
-  success: boolean;
-  message?: string;
-  data: T;
 }
 
 // 订单列表 API 响应

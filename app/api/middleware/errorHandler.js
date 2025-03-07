@@ -47,10 +47,7 @@ export async function withErrorHandler(request, next) {
     return NextResponse.json(
       {
         success: false,
-        error: {
-          code: errorCode,
-          message: message,
-        },
+        message: message,
       },
       { status: statusCode }
     );
