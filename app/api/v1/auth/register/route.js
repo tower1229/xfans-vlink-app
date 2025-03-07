@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { registerController } from "../../../controllers";
 import { registerSchema } from "../../../schemas";
 import { validateData } from "../../../utils/validation";

@@ -46,11 +46,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       icon: CreditCardIcon,
     },
     {
-      name: "数据统计",
-      path: "/analytics",
-      icon: ChartBarIcon,
-    },
-    {
       name: "账户设置",
       path: "/settings",
       icon: Cog6ToothIcon,

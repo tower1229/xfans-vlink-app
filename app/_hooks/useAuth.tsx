@@ -11,12 +11,12 @@ import { useRouter } from "next/navigation";
 import { userStore } from "@/_stores";
 import { observer } from "mobx-react-lite";
 import {
-  User,
   login as loginAction,
   logout as logoutAction,
   refreshToken as refreshTokenAction,
   register as registerAction,
 } from "@/_actions/authActions";
+import { User } from "@/_types/user";
 
 // 定义认证上下文类型
 interface AuthContextType {

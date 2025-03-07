@@ -111,6 +111,7 @@ export async function getUserByUsername(username) {
         username: true,
         email: true,
         password: true,
+        walletAddress: true,
         role: true,
         createdAt: true,
         updatedAt: true,
@@ -119,15 +120,16 @@ export async function getUserByUsername(username) {
 
     if (!user) return null;
 
-    // 转换为与旧代码兼容的格式
+    // 转换为统一的数据格式
     return {
       id: user.id,
       username: user.username,
       email: user.email,
-      password_hash: user.password,
+      password: user.password,
+      walletAddress: user.walletAddress,
       role: user.role,
-      created_at: user.createdAt,
-      updated_at: user.updatedAt,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     };
   } catch (error) {
     if (error instanceof ValidationError) {
@@ -253,15 +255,7 @@ export async function getUserById(id) {
     if (!user) return null;
 
     // 转换为与旧代码兼容的格式
-    return {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      wallet_address: user.walletAddress,
-      role: user.role,
-      created_at: user.createdAt,
-      updated_at: user.updatedAt,
-    };
+    return user;
   } catch (error) {
     console.error("获取用户失败:", error);
     throw error;

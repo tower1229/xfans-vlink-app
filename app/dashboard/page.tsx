@@ -16,6 +16,12 @@ export default function Dashboard() {
     }
   }, [user, loading, router]);
 
+  useEffect(() => {
+    if (user) {
+      console.log("Dashboard user data:", user);
+    }
+  }, [user]);
+
   // 如果正在加载或用户未登录，显示加载状态
   if (loading || !user) {
     return (

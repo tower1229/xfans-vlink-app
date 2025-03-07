@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import {
-  getAllPosts,
   getPostById,
   createPost,
   updatePost,
@@ -8,11 +7,6 @@ import {
   getPostsByOwner,
 } from "../utils/postUtils";
 import { verifyJwtToken } from "../utils/userUtils";
-import {
-  validateData,
-  createErrorResponse,
-  createSuccessResponse,
-} from "../utils/validation";
 
 /**
  * 获取所有付费内容

@@ -1,11 +1,5 @@
 import { fetchWithAuth } from "@/_utils/api";
-
-export interface User {
-  id: string;
-  username: string;
-  email: string;
-  [key: string]: any;
-}
+import { User } from "@/_types/user";
 
 interface ApiResponse<T> {
   success: boolean;
@@ -16,14 +10,13 @@ interface ApiResponse<T> {
 }
 
 export async function fetchUserInfo(): Promise<ApiResponse<User>> {
-  const response = (await fetchWithAuth("/api/v1/users/me")) as Response;
-  const data = (await response.json()) as ApiResponse<User>;
+  const response = await fetchWithAuth<ApiResponse<User>>("/api/v1/users/me");
 
-  if (!data.success) {
-    throw new Error(data.error?.message || "获取用户信息失败");
+  if (response.error) {
+    throw new Error(response.error?.message || "获取用户信息失败");
   }
 
-  return data;
+  return response;
 }
 
 export async function login(

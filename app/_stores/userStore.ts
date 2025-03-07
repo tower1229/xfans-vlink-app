@@ -1,8 +1,8 @@
 "use client";
 
 import { makeAutoObservable, runInAction } from "mobx";
-import { fetchUserInfo, User } from "@/_actions/authActions";
-
+import { fetchUserInfo } from "@/_actions/authActions";
+import { User } from "@/_types/user";
 class UserStore {
   user: User | null = null;
   loading: boolean = false;

@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   createUser,
-  getUserByEmail,
   getUserByUsername,
-  getUserByWalletAddress,
   verifyPassword,
   generateTokens,
   saveRefreshToken,
@@ -15,19 +13,12 @@ import {
   verifyJwtToken,
 } from "../utils/userUtils";
 import {
-  validateEmail,
-  validateUsername,
-  validatePassword,
-  createErrorResponse,
-  createSuccessResponse,
-} from "../utils/validation";
-import {
   NotFoundError,
   ValidationError,
   UnauthorizedError,
 } from "../middleware/errorHandler";
-import { validateData, createServerErrorResponse } from "../utils/validation";
-import { redis, cacheUtils } from "../utils/redis.mjs";
+import { createServerErrorResponse } from "../utils/validation";
+import { cacheUtils } from "../utils/redis.mjs";
 
 /**
  * 用户注册
@@ -92,7 +83,7 @@ export async function loginController(request, data) {
     }
 
     // 验证密码
-    const isPasswordValid = await verifyPassword(password, user.password_hash);
+    const isPasswordValid = await verifyPassword(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedError("密码错误");
     }
@@ -103,7 +94,7 @@ export async function loginController(request, data) {
     // 保存刷新令牌
     await saveRefreshToken(user.id, refreshToken);
 
-    // 返回用户信息和令牌
+    // 返回用户信息和令牌，确保数据格式一致性
     return NextResponse.json({
       success: true,
       data: {
@@ -111,7 +102,10 @@ export async function loginController(request, data) {
           id: user.id,
           username: user.username,
           email: user.email,
+          walletAddress: user.walletAddress || null,
           role: user.role,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
         },
         tokens: {
           accessToken,
@@ -269,24 +263,13 @@ export async function getCurrentUserController(request) {
     }
     console.log("获取到的用户信息:", userInfo);
 
-    // 构建响应数据
-    const userData = {
-      id: userInfo.id,
-      username: userInfo.username,
-      email: userInfo.email,
-      walletAddress: userInfo.wallet_address,
-      role: userInfo.role,
-      createdAt: userInfo.created_at,
-      updatedAt: userInfo.updated_at,
-    };
-
     // 将用户信息存入缓存，有效期30分钟
-    await cacheUtils.set(cacheKey, userData, 1800);
+    await cacheUtils.set(cacheKey, userInfo, 1800);
 
     // 返回用户信息
     const response = {
       success: true,
-      data: userData,
+      data: userInfo,
     };
     console.log("返回的响应:", response);
     return NextResponse.json(response);
@@ -317,13 +300,7 @@ export async function updateUserController(request, data) {
   // 返回更新后的用户信息
   return NextResponse.json({
     success: true,
-    data: {
-      id: updatedUser.id,
-      username: updatedUser.username,
-      email: updatedUser.email,
-      walletAddress: updatedUser.wallet_address,
-      role: updatedUser.role,
-    },
+    data: updatedUser,
   });
 }
 
@@ -393,13 +370,7 @@ export async function updateUserSettingsController(request, data) {
     // 返回更新后的用户信息
     return NextResponse.json({
       success: true,
-      data: {
-        id: updatedUser.id,
-        username: updatedUser.username,
-        email: updatedUser.email,
-        walletAddress: updatedUser.wallet_address,
-        role: updatedUser.role,
-      },
+      data: updatedUser,
     });
   } catch (error) {
     console.error("更新用户设置失败:", error);
