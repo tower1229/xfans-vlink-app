@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { updateOrderStatusController } from "../../../../controllers";
-import { withAuthAPI } from "../../../../middleware";
 import {
   validateData,
   createServerErrorResponse,

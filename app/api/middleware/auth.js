@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { verifyJwtToken } from "../utils/userUtils";
 import { UnauthorizedError } from "../../_utils/errors";
 

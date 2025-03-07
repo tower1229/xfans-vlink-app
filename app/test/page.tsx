@@ -15,7 +15,6 @@ import {
 import { sepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import DashboardLayout from "../(core)/dashboard-layout";
-import { fetchWithAuth } from "../_utils/api";
 import { createOrder } from "../_actions/orderActions";
 
 // 定义交易参数接口

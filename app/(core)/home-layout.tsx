@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/_hooks/useAuth";
-import { BellIcon, UserCircleIcon } from "@heroicons/react/24/outline";
+import { BellIcon } from "@heroicons/react/24/outline";
 
 interface HomeLayoutProps {
   children: React.ReactNode;

@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import {
   getPostByIdController as getPostById,
   updatePostController as updatePost,
