@@ -7,7 +7,7 @@
  *
  * Response body payload sent via the Action GET Request
  */
-export interface ActionGetRequest {}
+export type ActionGetRequest = Record<string, never>;
 
 /**
  * Type of action to determine client side handling
@@ -226,3 +226,9 @@ export interface ActionError {
   /** simple error message to be displayed to the user */
   message: string;
 }
+
+export type VLinkConfig = {
+  chainId: number;
+  rpcUrl: string;
+  contractAddress: string;
+};

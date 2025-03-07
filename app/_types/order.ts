@@ -49,11 +49,22 @@ export interface PaginationInfo {
 }
 
 // 订单列表 API 响应
-export interface OrdersResponse
-  extends ApiResponse<{
-    orders: Order[];
-    currentPage: number;
-    totalPages: number;
-    totalItems: number;
-    pageSize: number;
-  }> {}
+export type OrdersResponse = ApiResponse<{
+  orders: Order[];
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  pageSize: number;
+}>;
+
+// 将空接口改为具体的类型
+export type CreateOrderRequest = {
+  postId: string;
+  amount: string;
+};
+
+// 将空接口改为具体的类型
+export type UpdateOrderRequest = {
+  status?: number;
+  txHash?: string;
+};

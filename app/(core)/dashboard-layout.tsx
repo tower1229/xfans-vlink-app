@@ -11,9 +11,9 @@ import {
   CreditCardIcon,
   Cog6ToothIcon,
   ArrowLeftOnRectangleIcon,
-  ChartBarIcon,
   BellIcon,
 } from "@heroicons/react/24/outline";
+import Image from "next/image";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -86,9 +86,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   className="flex items-center"
                 >
                   <div className="h-10 w-10 overflow-hidden rounded-full border-2 border-gray-200">
-                    <img
+                    <Image
                       src={user?.avatar || "/placeholder-avatar.jpg"}
                       alt="avatar"
+                      width={40}
+                      height={40}
                       className="h-full w-full object-cover"
                     />
                   </div>

@@ -26,10 +26,12 @@ const SettingsPage = observer(() => {
   useEffect(() => {
     if (user) {
       setFormData({
-        ...formData,
         username: user.username || "",
         email: user.email || "",
         walletAddress: user.walletAddress || "",
+        currentPassword: "",
+        password: "",
+        confirmPassword: "",
       });
     }
   }, [user]);

@@ -12,11 +12,7 @@ class UserStore {
   private initializationPromise: Promise<void> | null = null;
 
   constructor() {
-    // 使用 makeAutoObservable 但排除 initializationPromise
-    makeAutoObservable(this, {
-      // @ts-ignore - MobX 允许这种用法，但 TypeScript 可能会报错
-      initializationPromise: false,
-    });
+    makeAutoObservable(this, undefined, { autoBind: true });
 
     // 如果在客户端环境，尝试从 localStorage 恢复用户状态
     if (typeof window !== "undefined") {
