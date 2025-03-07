@@ -15,9 +15,9 @@ export default function HomeLayout({ children }: HomeLayoutProps) {
 
   const navItems = [
     { name: "首页", path: "/" },
-    { name: "探索", path: "/explore" },
-    { name: "创作者", path: "/creators" },
-    { name: "关于", path: "/about" },
+    { name: "探索", path: "/" },
+    { name: "创作者", path: "/" },
+    { name: "关于", path: "/" },
   ];
 
   return (
