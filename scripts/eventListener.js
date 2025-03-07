@@ -1,0 +1,173 @@
+const { createPublicClient, http, parseAbiItem } = require("viem");
+const { sepolia } = require("viem/chains");
+const fetch = require("node-fetch");
+const crypto = require("crypto");
+const { config } = require("dotenv");
+
+// 初始化环境变量
+config();
+
+// 支付合约地址
+const NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS;
+
+// API密钥和密钥 - 应该在.env文件中配置
+const API_KEY = process.env.EVENT_LISTENER_API_KEY;
+const API_SECRET = process.env.EVENT_LISTENER_API_SECRET;
+
+// RPC URL - 建议使用可靠的 RPC 提供商
+const RPC_URL = process.env.RPC_URL;
+
+// 用于跟踪已处理的订单
+const processedOrders = new Set();
+
+if (!API_KEY || !API_SECRET) {
+  console.error(
+    "错误: 未配置API密钥或密钥。请在.env文件中设置EVENT_LISTENER_API_KEY和EVENT_LISTENER_API_SECRET"
+  );
+  process.exit(1);
+}
+
+if (!NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS) {
+  console.error(
+    "错误: 未配置支付合约地址。请在.env文件中设置PAYMENT_CONTRACT_ADDRESS"
+  );
+  process.exit(1);
+}
+
+if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
+  console.error(
+    "错误: 未配置API基础URL。请在.env文件中设置NEXT_PUBLIC_API_BASE_URL"
+  );
+  process.exit(1);
+}
+
+// 创建公共客户端
+const publicClient = createPublicClient({
+  chain: sepolia,
+  transport: http(RPC_URL),
+  pollingInterval: 1000, // 设置轮询间隔为1秒
+});
+
+// PaymentCompleted 事件的 ABI
+const paymentCompletedEventAbi = parseAbiItem(
+  "event PaymentCompleted(bytes32 indexed orderId)"
+);
+
+// 生成HMAC签名
+function generateSignature(data, timestamp) {
+  const payload = JSON.stringify(data) + timestamp;
+  return crypto.createHmac("sha256", API_SECRET).update(payload).digest("hex");
+}
+
+// 更新订单状态的函数
+async function updateOrderStatus(orderId, txHash) {
+  try {
+    // 检查订单是否已处理过
+    if (processedOrders.has(orderId)) {
+      console.log(`订单 ${orderId} 已经处理过，跳过更新`);
+      return;
+    }
+
+    console.log(`正在更新订单 ${orderId} 的状态...`);
+
+    // 准备请求数据
+    const requestData = {
+      status: "completed",
+      transactionHash: txHash,
+    };
+
+    // 生成时间戳和签名
+    const timestamp = Date.now().toString();
+    const signature = generateSignature(requestData, timestamp);
+
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/orders/${orderId}/status`;
+    console.log(`调用API: ${apiUrl}`);
+    console.log(`请求数据: ${JSON.stringify(requestData)}`);
+
+    // 调用 API 更新订单状态
+    const response = await fetch(
+      apiUrl,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-Key": API_KEY,
+          "X-Timestamp": timestamp,
+          "X-Signature": signature,
+        },
+        body: JSON.stringify(requestData),
+      }
+    );
+
+    if (!response.ok) {
+      console.error(`API响应错误: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error(`错误详情: ${errorText}`);
+      return;
+    }
+
+    const data = await response.json();
+
+    if (data.success) {
+      console.log(`订单 ${orderId} 状态已更新为已完成`);
+      // 将订单标记为已处理
+      processedOrders.add(orderId);
+    } else {
+      console.error(`更新订单状态失败:`, data.error);
+    }
+  } catch (error) {
+    console.error(`更新订单状态时出错:`, error);
+  }
+}
+
+// 开始监听合约事件
+async function startEventListener() {
+  console.log(`开始监听支付合约事件，合约地址: ${NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS}`);
+  console.log(`使用 RPC URL: ${RPC_URL}`);
+
+  try {
+    // 使用 viem 的 watchContractEvent 方法监听事件
+    const unwatch = publicClient.watchContractEvent({
+      address: NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS,
+      abi: [paymentCompletedEventAbi], // 使用数组包装 ABI
+      eventName: "PaymentCompleted", // 使用事件名称
+      onLogs: (logs) => {
+        for (const log of logs) {
+          // 从事件日志中提取 orderId
+          const orderId = log.args.orderId;
+          const txHash = log.transactionHash;
+
+          console.log(
+            `检测到 PaymentCompleted 事件，订单ID: ${orderId}, 交易哈希: ${txHash}`
+          );
+
+          // 更新订单状态
+          updateOrderStatus(orderId, txHash);
+        }
+      },
+      onError: (error) => {
+        console.error("监听事件时出错:", error);
+        // 尝试重新连接
+        console.log("尝试重新连接...");
+        setTimeout(() => startEventListener(), 5000);
+      },
+    });
+
+    // 处理程序退出
+    process.on("SIGINT", () => {
+      console.log("停止监听合约事件...");
+      unwatch();
+      process.exit(0);
+    });
+  } catch (error) {
+    console.error("设置事件监听器时出错:", error);
+    console.log("5秒后尝试重新连接...");
+    setTimeout(() => startEventListener(), 5000);
+  }
+}
+
+// 启动监听器
+startEventListener().catch((error) => {
+  console.error("启动事件监听器时出错:", error);
+  process.exit(1);
+});

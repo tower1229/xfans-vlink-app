@@ -1,0 +1,3 @@
+{
+    "buildCommand": "yarn prisma:generate && yarn build"
+}
