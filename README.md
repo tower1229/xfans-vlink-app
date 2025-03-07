@@ -1,4 +1,15 @@
-# vlink-xfans
+# XFans VLink App
+
+## 技术栈
+
+- Next.js 15.1.7
+- React 19
+- TypeScript
+- Prisma ORM
+- PostgreSQL
+- TailwindCSS
+- MobX
+- Viem
 
 ## 环境变量配置
 
@@ -7,173 +18,143 @@
 1. 在项目根目录创建一个 `.env` 文件（已提供 `.env.example` 作为模板）
 2. 填写以下必要的环境变量：
 
-```
-# 支付配置
-VERIFIER_PRIVATE_KEY=your_private_key_here
-NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS=your_payment_contract_address_here
+```bash
+# 数据库配置
+DATABASE_URL_UNPOOLED=postgres://user:password@endpoint.neon.tech/neondb?sslmode=require
 
-# Neon Database 连接信息
-DATABASE_URL=postgres://user:password@endpoint.neon.tech/neondb?sslmode=require
+# JWT 配置
+JWT_SECRET=your_jwt_secret_here
+JWT_EXPIRES_IN=1h
+REFRESH_TOKEN_SECRET=your_refresh_token_secret_here
+REFRESH_TOKEN_EXPIRES_IN=7d
+
+# Web3 配置
+NEXT_PUBLIC_CHAIN_ID=1
+NEXT_PUBLIC_RPC_URL=your_rpc_url_here
 ```
 
 ### 环境变量说明
 
-| 变量名                               | 描述                   | 是否必需 |
-| ------------------------------------ | ---------------------- | -------- |
-| VERIFIER_PRIVATE_KEY                 | 用于签名订单的私钥     | 是       |
-| NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS | 支付合约地址           | 是       |
-| DATABASE_URL                         | Neon Database 连接 URL | 是       |
+| 变量名                   | 描述             | 是否必需 |
+| ------------------------ | ---------------- | -------- |
+| DATABASE_URL_UNPOOLED    | 数据库连接 URL   | 是       |
+| JWT_SECRET               | JWT 密钥         | 是       |
+| JWT_EXPIRES_IN           | JWT 过期时间     | 是       |
+| REFRESH_TOKEN_SECRET     | 刷新令牌密钥     | 是       |
+| REFRESH_TOKEN_EXPIRES_IN | 刷新令牌过期时间 | 是       |
+| NEXT_PUBLIC_CHAIN_ID     | 区块链网络 ID    | 是       |
+| NEXT_PUBLIC_RPC_URL      | RPC 节点 URL     | 是       |
 
-### 安全注意事项
+## 开发说明
 
-- 不要将 `.env` 文件提交到版本控制系统中
-- 在生产环境中，确保私钥等敏感信息安全存储
-
-## 在 Vercel 上部署
-
-本项目可以轻松部署到 Vercel 平台，并使用 Neon Database 数据库。
-
-### 步骤 1: 创建 Vercel 账户
-
-如果您还没有 Vercel 账户，请前往 [Vercel](https://vercel.com) 注册一个账户。
-
-### 步骤 2: 创建 Neon Database 账户
-
-1. 前往 [Neon](https://neon.tech) 注册一个账户
-2. 创建一个新项目
-3. 获取数据库连接字符串
-
-### 步骤 3: 安装 Vercel CLI (可选)
+### 安装依赖
 
 ```bash
-npm install -g vercel
+yarn install
 ```
 
-### 步骤 4: 部署项目
-
-#### 方法 1: 使用 Vercel 仪表板
-
-1. 在 Vercel 仪表板中点击 "New Project"
-2. 导入您的 Git 仓库
-3. 配置项目设置
-4. 在 "Environment Variables" 部分添加必要的环境变量，包括 `DATABASE_URL`
-5. 点击 "Deploy"
-
-#### 方法 2: 使用 Vercel CLI
+### 初始化数据库
 
 ```bash
-# 登录 Vercel
-vercel login
+# 生成 Prisma Client
+yarn prisma:generate
 
-# 部署项目
-vercel
+# 运行数据库迁移
+yarn prisma:migrate
+
+# 启动 Prisma Studio（可选）
+yarn prisma:studio
 ```
 
-### 步骤 5: 初始化数据库
+### 启动开发服务器
 
-部署完成后，访问以下 API 端点初始化数据库：
-
-```
-https://your-vercel-domain.vercel.app/api/init-db
+```bash
+yarn dev
 ```
 
-这将创建必要的数据库表并填充示例产品数据。
+### 构建生产版本
+
+```bash
+yarn build
+```
+
+### 启动生产服务器
+
+```bash
+yarn start
+```
 
 ## 数据库架构
 
-本项目使用 Neon PostgreSQL 数据库存储产品和订单信息。
+本项目使用 PostgreSQL 数据库，通过 Prisma ORM 进行管理。
 
-### 产品表 (products)
+### 付费内容表 (posts)
 
-| 字段名        | 类型      | 描述                     |
-| ------------- | --------- | ------------------------ |
-| id            | VARCHAR   | 产品 ID (主键)           |
-| title         | VARCHAR   | 产品标题                 |
-| image         | VARCHAR   | 产品图片 URL             |
-| price         | VARCHAR   | 产品价格 (BigInt 字符串) |
-| token_address | VARCHAR   | 代币合约地址             |
-| chain_id      | INTEGER   | 区块链 ID                |
-| owner_address | VARCHAR   | 产品所有者地址           |
-| created_at    | TIMESTAMP | 创建时间                 |
-| updated_at    | TIMESTAMP | 更新时间                 |
+| 字段名       | 类型     | 描述           |
+| ------------ | -------- | -------------- |
+| id           | String   | 内容 ID (主键) |
+| title        | String   | 内容标题       |
+| image        | String   | 内容图片 URL   |
+| price        | BigInt   | 内容价格       |
+| tokenAddress | String   | 代币合约地址   |
+| chainId      | Int      | 区块链 ID      |
+| ownerAddress | String   | 内容所有者地址 |
+| createdAt    | DateTime | 创建时间       |
+| updatedAt    | DateTime | 更新时间       |
 
 ### 订单表 (orders)
 
-| 字段名           | 类型      | 描述                     |
-| ---------------- | --------- | ------------------------ |
-| id               | VARCHAR   | 订单 ID (主键)           |
-| product_id       | VARCHAR   | 产品 ID (外键)           |
-| user_address     | VARCHAR   | 用户地址                 |
-| price            | VARCHAR   | 订单价格 (BigInt 字符串) |
-| token_address    | VARCHAR   | 代币合约地址             |
-| owner_address    | VARCHAR   | 产品所有者地址           |
-| chain_id         | INTEGER   | 区块链 ID                |
-| status           | VARCHAR   | 订单状态                 |
-| signature        | TEXT      | 订单签名                 |
-| transaction_hash | VARCHAR   | 交易哈希                 |
-| created_at       | TIMESTAMP | 创建时间                 |
-| expires_at       | TIMESTAMP | 过期时间                 |
+| 字段名    | 类型     | 描述           |
+| --------- | -------- | -------------- |
+| id        | String   | 订单 ID (主键) |
+| userId    | String   | 用户 ID (外键) |
+| postId    | String   | 内容 ID (外键) |
+| status    | Int      | 订单状态       |
+| amount    | BigInt   | 订单金额       |
+| txHash    | String?  | 交易哈希       |
+| expiresAt | DateTime | 过期时间       |
+| createdAt | DateTime | 创建时间       |
+| updatedAt | DateTime | 更新时间       |
 
-### 数据库管理接口
+### 用户表 (users)
 
-- `GET /api/init-db` - 初始化数据库
+| 字段名        | 类型     | 描述           |
+| ------------- | -------- | -------------- |
+| id            | String   | 用户 ID (主键) |
+| username      | String   | 用户名         |
+| email         | String?  | 电子邮件       |
+| password      | String   | 密码哈希       |
+| walletAddress | String?  | 钱包地址       |
+| role          | String   | 用户角色       |
+| createdAt     | DateTime | 创建时间       |
+| updatedAt     | DateTime | 更新时间       |
 
-## 关于 Neon Database
+### 刷新令牌表 (refresh_tokens)
 
-[Neon](https://neon.tech) 是一个无服务器 PostgreSQL 数据库服务，具有以下特点：
+| 字段名    | 类型     | 描述           |
+| --------- | -------- | -------------- |
+| id        | String   | 令牌 ID (主键) |
+| token     | String   | 刷新令牌       |
+| userId    | String   | 用户 ID (外键) |
+| expiresAt | DateTime | 过期时间       |
+| createdAt | DateTime | 创建时间       |
 
-- 自动扩展
-- 按使用付费
-- 无需管理基础设施
-- 与 Vercel 无缝集成
-- 支持 PostgreSQL 的所有功能
+## API 文档
 
-# XFans VLink App
+API 文档使用 OpenAPI 规范，可以在 `openapi.json` 文件中查看完整的 API 定义。
 
-## Authentication Implementation
+## 安全注意事项
 
-### Backend Authentication
+- 不要将 `.env` 文件提交到版本控制系统中
+- 确保所有敏感信息都通过环境变量配置
+- 定期更新依赖包以修复潜在的安全漏洞
+- 使用 HTTPS 进行所有 API 通信
+- 遵循 JWT 最佳实践进行身份验证
 
-The backend API routes have been secured with JWT token verification. The `verifyJwtToken` middleware is used to protect routes that require authentication.
+## 贡献指南
 
-### Frontend Authentication
-
-The frontend has been updated to include authentication tokens in API requests. This is implemented through:
-
-1. **API Utility Functions**:
-
-   - `getAuthHeaders()`: Returns headers with the Authorization token if available
-   - `fetchWithAuth()`: A wrapper around the fetch API that includes authentication headers
-
-2. **Updated Components**:
-
-   - All API calls in the following components have been updated to use the `fetchWithAuth` utility:
-     - Posts page (`app/posts/page.tsx`)
-     - Orders page (`app/orders/page.tsx`)
-     - Order details page (`app/orders/[orderId]/page.tsx`)
-     - Test page (`app/test/page.tsx`)
-     - Payment Button component (`app/components/PaymentButton.jsx`)
-
-3. **Authentication Hook**:
-   - The `useAuth` hook (`app/hooks/useAuth.tsx`) manages authentication state and tokens
-   - It provides login, logout, and token refresh functionality
-   - The hook already includes proper Authorization headers in its API requests
-
-## Usage
-
-To make authenticated API requests in new components, import and use the `fetchWithAuth` utility:
-
-```typescript
-import { fetchWithAuth } from "../_utils/api";
-
-// Example GET request
-const response = await fetchWithAuth("/api/v1/protected-endpoint");
-
-// Example POST request
-const response = await fetchWithAuth("/api/v1/protected-endpoint", {
-  method: "POST",
-  body: JSON.stringify(data),
-});
-```
-
-The utility automatically includes the Authorization header with the JWT token if the user is logged in.
+1. Fork 本仓库
+2. 创建您的特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交您的更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启一个 Pull Request
