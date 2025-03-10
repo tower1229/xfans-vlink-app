@@ -164,6 +164,3 @@ export async function buildPaymentTransaction(
     };
   }
 }
-
-// 重新导出 viem 的函数
-export { encodeAbiParameters, parseAbiParameters } from "viem";

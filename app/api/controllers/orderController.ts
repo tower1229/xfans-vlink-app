@@ -15,8 +15,6 @@ import { keccak256 } from "viem";
 import { verifyJwtToken } from "../utils/userUtils";
 import { redis } from "../utils/redis.mjs";
 import {
-  encodeAbiParameters,
-  parseAbiParameters,
   signOrderMessage,
   buildPaymentTransaction,
   generateOrderId,
@@ -24,8 +22,8 @@ import {
 import { ActionPostResponse } from "@/_types/vlink";
 import { ApiResponse } from "@/_types/api";
 import { Order } from "@/_types/order";
-import { User } from "@/_types/user";
 import { JwtPayload } from "@/_types/jwt";
+import { encodeAbiParameters, parseAbiParameters } from "viem";
 
 interface AuthenticatedRequest extends Request {
   user: { userId: string };
@@ -129,12 +127,12 @@ export async function createOrderController(
     const encodedOrderData = encodeAbiParameters(
       parseAbiParameters("bytes32, uint256, address, address, uint32, uint64"),
       [
-        `0x${order.id.replace(/-/g, "")}`, // 直接使用完整的32字节订单ID
-        BigInt(order.amount.toString()),
-        order.post?.tokenAddress as `0x${string}`,
-        order.user?.walletAddress as `0x${string}`,
+        `0x${order.id.replace(/-/g, "")}`, // orderId 直接使用完整的32字节订单ID
+        BigInt(order.amount.toString()), //  amount
+        order.post?.tokenAddress as `0x${string}`, // tokenAddress
+        order.user?.walletAddress as `0x${string}`, // seller walletAddress
         timestamp,
-        BigInt(order.post?.chainId || 0),
+        BigInt(order.post?.chainId || 0), //  chainId
       ]
     );
 
