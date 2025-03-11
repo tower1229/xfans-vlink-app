@@ -1,6 +1,5 @@
 const { createPublicClient, http, parseAbiItem } = require("viem");
 const { sepolia } = require("viem/chains");
-const fetch = require("node-fetch");
 const crypto = require("crypto");
 const { config } = require("dotenv");
 
@@ -8,7 +7,8 @@ const { config } = require("dotenv");
 config();
 
 // 支付合约地址
-const NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS;
+const NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS =
+  process.env.NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS;
 
 // API密钥和密钥 - 应该在.env文件中配置
 const API_KEY = process.env.EVENT_LISTENER_API_KEY;
@@ -85,19 +85,16 @@ async function updateOrderStatus(orderId, txHash) {
     console.log(`请求数据: ${JSON.stringify(requestData)}`);
 
     // 调用 API 更新订单状态
-    const response = await fetch(
-      apiUrl,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "X-API-Key": API_KEY,
-          "X-Timestamp": timestamp,
-          "X-Signature": signature,
-        },
-        body: JSON.stringify(requestData),
-      }
-    );
+    const response = await fetch(apiUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": API_KEY,
+        "X-Timestamp": timestamp,
+        "X-Signature": signature,
+      },
+      body: JSON.stringify(requestData),
+    });
 
     if (!response.ok) {
       console.error(`API响应错误: ${response.status} ${response.statusText}`);
@@ -122,7 +119,9 @@ async function updateOrderStatus(orderId, txHash) {
 
 // 开始监听合约事件
 async function startEventListener() {
-  console.log(`开始监听支付合约事件，合约地址: ${NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS}`);
+  console.log(
+    `开始监听支付合约事件，合约地址: ${NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS}`
+  );
   console.log(`使用 RPC URL: ${RPC_URL}`);
 
   try {
