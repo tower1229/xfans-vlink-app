@@ -133,7 +133,7 @@ async function startEventListener() {
       onLogs: (logs) => {
         for (const log of logs) {
           // 从事件日志中提取 orderId
-          const orderId = log.args.orderId;
+          const orderId = log.args.orderId.replace("0x", "");
           const txHash = log.transactionHash;
 
           console.log(

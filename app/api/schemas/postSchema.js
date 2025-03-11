@@ -24,7 +24,6 @@ export const createPostSchema = z.object({
     ),
   tokenAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "代币地址格式不正确"),
   chainId: z.number().int().positive("链ID必须是正整数"),
-  ownerAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "所有者地址格式不正确"),
 });
 
 /**
@@ -58,8 +57,4 @@ export const updatePostSchema = z.object({
     .regex(/^0x[a-fA-F0-9]{40}$/, "代币地址格式不正确")
     .optional(),
   chainId: z.number().int().positive("链ID必须是正整数").optional(),
-  ownerAddress: z
-    .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/, "所有者地址格式不正确")
-    .optional(),
 });

@@ -18,6 +18,9 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  images: {
+    domains: ["xyoss.newaircloud.com", "img.daisyui.com"], // 添加允许的图片域名
+  },
 };
 
 export default nextConfig;

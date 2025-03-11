@@ -6,7 +6,7 @@ import {
   deletePost,
   getPostsByOwner,
 } from "../utils/postUtils";
-import { verifyJwtToken } from "../utils/userUtils";
+import { verifyJwtToken, getUserById } from "../utils/userUtils";
 
 /**
  * 获取所有付费内容
@@ -85,7 +85,9 @@ export async function getPostByIdController(request, postId) {
  */
 export async function createPostController(request, data) {
   // 从令牌中获取用户信息
-  const user = await verifyJwtToken(request.token);
+  const tokenPayload = await verifyJwtToken(request.token);
+  const user = await getUserById(tokenPayload.userId);
+  console.log("create user", user);
 
   // 创建付费内容
   const post = await createPost({
