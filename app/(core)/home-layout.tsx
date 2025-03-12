@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/_hooks/useAuth";
-import { BellIcon, UserCircleIcon } from "@heroicons/react/24/outline";
+import { BellIcon } from "@heroicons/react/24/outline";
 
 interface HomeLayoutProps {
   children: React.ReactNode;
@@ -36,8 +36,8 @@ export default function HomeLayout({ children }: HomeLayoutProps) {
 
             <nav className="hidden lg:flex">
               <ul className="flex space-x-4">
-                {navItems.map((item) => (
-                  <li key={item.path}>
+                {navItems.map((item, index) => (
+                  <li key={index}>
                     <Link
                       href={item.path}
                       className={`px-3 py-2 rounded-lg ${

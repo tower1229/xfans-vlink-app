@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { updateOrderStatusController } from "../../../../controllers";
-import { withAuthAPI } from "../../../../middleware";
+import { updateOrderStatusController } from "@/api/controllers";
 import {
   validateData,
   createServerErrorResponse,
   createValidationErrorResponse,
-} from "../../../../utils/validation";
-import { verifySignature } from "../../../../middleware/eventListenerAuth";
-import { updateOrderStatusSchema } from "../../../../schemas/orderSchema";
+} from "@/api/utils/validation";
+import { verifySignature } from "@/api/middleware/eventListenerAuth";
+import { updateOrderStatusSchema } from "@/api/schemas/orderSchema";
 
 // 更新订单状态
 export async function PUT(request, { params }) {

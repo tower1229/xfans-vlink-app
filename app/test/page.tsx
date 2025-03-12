@@ -8,6 +8,7 @@ import {
   parseAbi,
   formatUnits,
   encodeFunctionData,
+  decodeFunctionData,
   type WalletClient,
   type PublicClient,
   type Hex,
@@ -15,8 +16,8 @@ import {
 import { sepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import DashboardLayout from "../(core)/dashboard-layout";
-import { fetchWithAuth } from "../_utils/api";
 import { createOrder } from "../_actions/orderActions";
+import PaymentContractABI from "@/_lib/PaymentContract.json";
 
 // 定义交易参数接口
 interface TransactionParams {
@@ -41,7 +42,7 @@ function ensureHex(value: string): `0x${string}` {
 
 export default function TestPage() {
   const [productId, setProductId] = useState(
-    "e658ca73-848d-4351-b7af-2a1f6648d5b1"
+    "56685929-3585-4661-9db4-f5f7213f0eec"
   );
   const [userAddress, setUserAddress] = useState("");
   const [chainId] = useState("11155111"); // 固定为Sepolia测试网
@@ -109,52 +110,6 @@ export default function TestPage() {
     } catch (error: any) {
       console.error("连接钱包失败:", error);
       setTxStatus("错误: " + error.message);
-    }
-  };
-
-  // 解码交易数据
-  const decodeTransactionData = (data: string) => {
-    try {
-      // 检查数据是否为有效的十六进制字符串
-      if (!data.startsWith("0x")) {
-        return "无效的交易数据";
-      }
-
-      // 提取函数选择器（前4个字节）
-      const functionSelector = data.slice(0, 10);
-
-      // 根据函数选择器识别函数
-      let functionName = "未知函数";
-
-      // 支付合约的函数选择器
-      // 注意：这些选择器需要根据实际合约ABI计算得出
-      if (functionSelector === "0x095ea7b3") {
-        // approve(address,uint256)
-        functionName = "approve";
-      } else if (functionSelector === "0xa62f7ba2") {
-        // payWithERC20(address,uint256,bytes,bytes)
-        functionName = "payWithERC20";
-      } else if (functionSelector === "0xb8a5c59a") {
-        // payWithNative(bytes,bytes)
-        functionName = "payWithNative";
-      } else {
-        // 其他常见函数
-        switch (functionSelector) {
-          case "0xa9059cbb": // transfer(address,uint256)
-            functionName = "transfer";
-            break;
-          case "0x23b872dd": // transferFrom(address,address,uint256)
-            functionName = "transferFrom";
-            break;
-          default:
-            functionName = `未知函数 (${functionSelector})`;
-        }
-      }
-
-      return `函数: ${functionName}\n数据: ${data}`;
-    } catch (error) {
-      console.error("解码交易数据失败:", error);
-      return "解码失败";
     }
   };
 
@@ -378,15 +333,15 @@ export default function TestPage() {
       const transaction = JSON.parse(
         Buffer.from(response.data.transaction, "base64").toString("utf-8")
       );
-
-      // 判断是否为ERC20支付 - 直接从transaction对象判断
-      // 如果value为0且函数选择器匹配payWithERC20，则为ERC20支付
-      const functionSelector = transaction.data.slice(0, 10);
-      const isERC20Payment =
-        transaction.value === "0" && functionSelector === "0xa62f7ba2"; // payWithERC20函数选择器
+      console.log("transaction", transaction);
+      const data = decodeFunctionData({
+        abi: PaymentContractABI,
+        data: transaction.data,
+      });
+      console.log("decode data", data);
 
       // 如果是ERC20支付，需要先进行授权
-      if (isERC20Payment) {
+      if (data.functionName === "payWithERC20") {
         setTxStatus("检测到ERC20支付，准备授权...");
 
         try {

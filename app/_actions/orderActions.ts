@@ -81,7 +81,7 @@ export const createOrder = async (
  */
 export const closeOrder = async (orderId: string): Promise<boolean> => {
   try {
-    const payload = { status: 2 }; // 2 表示已关闭状态
+    const payload = { status: "closed" };
 
     const data = await fetchWithAuth<ApiResponse<{ success: boolean }>>(
       `/api/v1/orders/${orderId}/status`,

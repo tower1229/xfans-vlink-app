@@ -9,12 +9,12 @@ import {
   updatePost,
   deletePost,
 } from "@/_actions/postActions";
+import Image from "next/image";
 
 export default function Posts() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<string>("all");
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
   const [currentPost, setCurrentPost] = useState<Post | null>(null);
@@ -22,8 +22,8 @@ export default function Posts() {
     title: "",
     image: "",
     price: "",
-    tokenAddress: "",
-    chainId: "",
+    tokenAddress: "0x0000000000000000000000000000000000000000",
+    chainId: "11155111",
     ownerAddress: "",
   });
 
@@ -210,19 +210,6 @@ export default function Posts() {
                 placeholder="1"
               />
             </div>
-            <div>
-              <label className="font-medium text-sm text-gray-700 block">
-                所有者地址
-              </label>
-              <input
-                type="text"
-                name="ownerAddress"
-                value={formData.ownerAddress}
-                onChange={handleInputChange}
-                className="border rounded-md border-gray-300 shadow-xs mt-1 w-full p-2 block"
-                placeholder="0x0000000000000000000000000000000000000000"
-              />
-            </div>
           </div>
           <div className="flex space-x-3 mt-6 justify-end">
             <button
@@ -309,18 +296,6 @@ export default function Posts() {
                 type="text"
                 name="chainId"
                 value={formData.chainId}
-                onChange={handleInputChange}
-                className="border rounded-md border-gray-300 shadow-xs mt-1 w-full p-2 block"
-              />
-            </div>
-            <div>
-              <label className="font-medium text-sm text-gray-700 block">
-                所有者地址
-              </label>
-              <input
-                type="text"
-                name="ownerAddress"
-                value={formData.ownerAddress}
                 onChange={handleInputChange}
                 className="border rounded-md border-gray-300 shadow-xs mt-1 w-full p-2 block"
               />
@@ -438,11 +413,15 @@ export default function Posts() {
                           {post.title}
                         </td>
                         <td className="text-sm py-4 px-6 text-gray-500 whitespace-nowrap">
-                          <img
-                            src={post.image}
-                            alt={post.title}
-                            className="rounded-sm object-cover h-10 w-10"
-                          />
+                          <div className="relative w-10 h-10">
+                            <Image
+                              src={post.image}
+                              alt={post.title}
+                              fill
+                              sizes="40px"
+                              className="rounded-sm object-cover"
+                            />
+                          </div>
                         </td>
                         <td className="text-sm py-4 px-6 text-gray-500 whitespace-nowrap">
                           {post.price}

@@ -1,3 +1,4 @@
+import { ZERO_ADDRESS } from "@/_lib/constant";
 import { v4 as uuidv4 } from "uuid";
 import { encodeFunctionData } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -107,13 +108,12 @@ export async function buildPaymentTransaction(
   const NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS =
     process.env.NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS ||
     "0x1234567890123456789012345678901234567890";
-
   // 根据支付方式构建不同的交易
-  if (order.tokenAddress === "0x0000000000000000000000000000000000000000") {
+  if (order.post.tokenAddress === ZERO_ADDRESS) {
     // ETH支付 - 构建payWithNative交易
     return {
       to: NEXT_PUBLIC_PAYMENT_CONTRACT_ADDRESS,
-      value: order.price.toString(),
+      value: order.amount.toString(),
       data: encodeFunctionData({
         abi: [
           {
@@ -155,7 +155,7 @@ export async function buildPaymentTransaction(
         functionName: "payWithERC20",
         args: [
           order.tokenAddress,
-          BigInt(order.price.toString()),
+          BigInt(order.amount.toString()),
           encodedOrderData,
           signature,
         ],
@@ -164,6 +164,3 @@ export async function buildPaymentTransaction(
     };
   }
 }
-
-// 重新导出 viem 的函数
-export { encodeAbiParameters, parseAbiParameters } from "viem";

@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { getAllPostsController, createPostController } from "../../controllers";
 import { createPostSchema } from "../../schemas";
 import {

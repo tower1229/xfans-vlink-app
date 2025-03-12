@@ -221,7 +221,6 @@ export async function getOrderById(orderId) {
     if (!orderId) {
       throw new OrderError("订单ID不能为空", "INVALID_ORDER_ID");
     }
-
     const order = await db.order.findUnique({
       where: { id: orderId },
       include: {

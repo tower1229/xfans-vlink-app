@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { refreshTokenController } from "../../../controllers";
 import { refreshTokenSchema } from "../../../schemas";
 import {

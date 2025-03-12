@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { loginController } from "../../../controllers";
 import { loginSchema } from "../../../schemas";
 import {
