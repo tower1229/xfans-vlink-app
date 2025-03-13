@@ -433,7 +433,6 @@ export async function verifyJwtToken(token: string) {
       userId: payload.userId,
       username: payload.username,
       role: payload.role,
-      walletAddress: payload.walletAddress,
     });
 
     return payload;

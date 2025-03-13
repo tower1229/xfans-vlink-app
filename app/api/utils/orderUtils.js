@@ -154,7 +154,7 @@ export async function buildPaymentTransaction(
         ],
         functionName: "payWithERC20",
         args: [
-          order.tokenAddress,
+          order.post.tokenAddress,
           BigInt(order.amount.toString()),
           encodedOrderData,
           signature,

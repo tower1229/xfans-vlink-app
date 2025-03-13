@@ -147,6 +147,8 @@ export async function createOrderController(
       signature
     );
 
+    console.log("new transaction", transaction);
+
     return formatResponse(true, {
       transaction: Buffer.from(JSON.stringify(transaction)).toString("base64"),
       chain: order.post.chainId,

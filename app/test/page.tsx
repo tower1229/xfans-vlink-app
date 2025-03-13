@@ -42,7 +42,7 @@ function ensureHex(value: string): `0x${string}` {
 
 export default function TestPage() {
   const [productId, setProductId] = useState(
-    "56685929-3585-4661-9db4-f5f7213f0eec"
+    "e658ca73-848d-4351-b7af-2a1f6648d5b1" //"56685929-3585-4661-9db4-f5f7213f0eec"
   );
   const [userAddress, setUserAddress] = useState("");
   const [chainId] = useState("11155111"); // 固定为Sepolia测试网
